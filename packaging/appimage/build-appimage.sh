@@ -86,7 +86,7 @@ export QT_QPA_PLATFORMTHEME="${QT_QPA_PLATFORMTHEME:-}"
 HOOK
 
 # --- 7. First pass: bundle the app + Qt (scans qml/ for imports) --------------
-export QML_SOURCES_PATHS="${repo_root}/qml"
+export QML_SOURCES_PATHS="${repo_root}/src/qml"
 "${LD}" --appdir "${APPDIR}" --plugin qt \
     --desktop-file "${APPDIR}/usr/share/applications/io.github.mpengellyca.qalkulator.desktop" \
     --icon-file "${APPDIR}/usr/share/icons/hicolor/scalable/apps/io.github.mpengellyca.qalkulator.svg"
