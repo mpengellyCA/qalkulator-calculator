@@ -109,13 +109,17 @@ fi
 # libqalculate fetches exchange rates over HTTPS (ECB, floatrates, jsdelivr, …)
 # via libcurl/OpenSSL. A portable app has no system trust store, so every fetch
 # fails cert verification and the "updated" date is stuck at the shipped snapshot.
-# Bundle the CA bundle; main.cpp points CURL_CA_BUNDLE/SSL_CERT_FILE at it.
+# MSYS2's curl AND openssl are RELOCATABLE: at runtime they derive the CA path
+# relative to the DLL (in bin/) by stripping /bin and appending etc/ssl/... — so
+# the bundle MUST live at <app>/etc/ssl/certs/ca-bundle.crt (a sibling of bin/),
+# NOT under bin/. Placed there, curl finds it automatically (no env vars needed).
 _ca="$(find "${PREFIX}" -name 'ca-bundle.crt' 2>/dev/null | head -1)"
 [ -z "${_ca}" ] && _ca="$(find "${PREFIX}" \( -name 'ca-bundle.crt' -o -name 'cert.pem' \) -path '*ssl*' 2>/dev/null | head -1)"
 if [ -n "${_ca}" ]; then
     echo "==> Bundling CA certificates (${_ca})"
-    mkdir -p "${STAGE}/bin/ssl/certs"
-    cp "${_ca}" "${STAGE}/bin/ssl/certs/ca-bundle.crt"
+    mkdir -p "${STAGE}/etc/ssl/certs"
+    cp "${_ca}" "${STAGE}/etc/ssl/certs/ca-bundle.crt"
+    cp "${_ca}" "${STAGE}/etc/ssl/cert.pem"   # OpenSSL's relocated default file
 else
     echo "!! CA bundle not found — currency rate fetch will fail on Windows"
 fi
