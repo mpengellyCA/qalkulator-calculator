@@ -38,9 +38,9 @@
     <binary>qalkulator</binary>
   </provides>
   <releases>
-    <release version="0.1.0" date="2026-06-30">
+    <release version="@QALKULATOR_VERSION@" date="@QALKULATOR_RELEASE_DATE@">
       <description>
-        <p>Initial release.</p>
+        <p>Rolling beta release. See the project page for changes.</p>
       </description>
     </release>
   </releases>

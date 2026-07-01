@@ -55,7 +55,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory(src)
 
 install(PROGRAMS io.github.mpengellyca.qalkulator.desktop DESTINATION ${KDE_INSTALL_APPDIR})
-install(FILES io.github.mpengellyca.qalkulator.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+
+# Generate the AppStream metainfo so its <release> tracks the real build version
+# (what software centres display) instead of a hardcoded value.
+string(TIMESTAMP QALKULATOR_RELEASE_DATE "%Y-%m-%d" UTC)
+configure_file(io.github.mpengellyca.qalkulator.metainfo.xml.in
+    ${CMAKE_CURRENT_BINARY_DIR}/io.github.mpengellyca.qalkulator.metainfo.xml @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/io.github.mpengellyca.qalkulator.metainfo.xml
+    DESTINATION ${KDE_INSTALL_METAINFODIR})
 install(FILES icons/io.github.mpengellyca.qalkulator.svg
     DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/scalable/apps)
 
