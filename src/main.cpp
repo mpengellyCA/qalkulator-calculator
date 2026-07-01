@@ -15,7 +15,9 @@
 #include <QTimer>
 
 #ifdef Q_OS_WIN
-#include <windows.h>
+// Declared directly rather than via <windows.h>, whose macros (OPTIONAL, IN, …)
+// collide with libqalculate's enums included further down.
+extern "C" __declspec(dllimport) void __stdcall OutputDebugStringW(const wchar_t *);
 #endif
 
 #include <KAboutData>
@@ -64,7 +66,8 @@ void messageFilter(QtMsgType type, const QMessageLogContext &context, const QStr
         // A GUI-subsystem app has no console, so stderr is usually unconnected;
         // the debugger channel is where Qt's own default handler writes (visible
         // in DebugView, or Wine's +debugstr).
-        OutputDebugStringW(reinterpret_cast<const wchar_t *>((formatted + QLatin1Char('\n')).utf16()));
+        const QString line = formatted + QLatin1Char('\n');
+        OutputDebugStringW(reinterpret_cast<const wchar_t *>(line.utf16()));
 #endif
         fprintf(stderr, "%s\n", qUtf8Printable(formatted));
         fflush(stderr);
