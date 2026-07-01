@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+                          http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name="kalkrc"/>
+  <group name="General">
+    <entry name="keypadVisible" type="Bool">
+      <label>Whether the on-screen keypad is shown.</label>
+      <default>true</default>
+    </entry>
+    <entry name="resultFormat" type="Int">
+      <label>Result number format: 0=normal, 1=scientific, 2=engineering.</label>
+      <default>0</default>
+    </entry>
+    <entry name="decimalPlaces" type="Int">
+      <label>Displayed decimal places; -1 means automatic.</label>
+      <default>-1</default>
+    </entry>
+    <entry name="thousandsSeparator" type="Bool">
+      <label>Group digits with a thousands separator.</label>
+      <default>true</default>
+    </entry>
+    <entry name="angleUnit" type="Int">
+      <label>Angle unit: 0=degrees, 1=radians, 2=gradians.</label>
+      <default>0</default>
+    </entry>
+    <entry name="lastConverterMode" type="Int">
+      <label>Last-used converter mode: 0=units, 1=currency. Target of Ctrl+Right.</label>
+      <default>1</default>
+    </entry>
+    <entry name="fromCurrency" type="String">
+      <label>Remembered source currency.</label>
+      <default>USD</default>
+    </entry>
+    <entry name="toCurrency" type="String">
+      <label>Remembered destination currency.</label>
+      <default>EUR</default>
+    </entry>
+    <entry name="fromUnit" type="String">
+      <label>Remembered source unit.</label>
+      <default>meter</default>
+    </entry>
+    <entry name="toUnit" type="String">
+      <label>Remembered destination unit.</label>
+      <default>foot</default>
+    </entry>
+    <entry name="persistHistoryCount" type="Int">
+      <label>How many tape entries to restore between launches.</label>
+      <default>50</default>
+    </entry>
+    <entry name="history" type="StringList">
+      <label>Serialized recent results (expression\x1fvalue\x1fcontext per entry).</label>
+    </entry>
+  </group>
+</kcfg>

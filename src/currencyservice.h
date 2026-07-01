@@ -1,0 +1,68 @@
+// SPDX-FileCopyrightText: 2026 Mike Pengelly <https://github.com/mpengellyCA>
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// CurrencyService — async exchange-rate refresh with graceful offline fallback.
+//
+// The blocking network fetch (CALCULATOR->fetchExchangeRates) runs on a worker
+// thread and OUTSIDE the engine's calc mutex. Only the subsequent
+// loadExchangeRates() (which mutates CALCULATOR state) is done under the shared
+// mutex. Results are marshalled back to the GUI thread.
+
+#pragma once
+
+#include <QObject>
+#include <QString>
+#include <QStringList>
+
+class CalculatorEngine;
+class QThread;
+
+class CurrencyService : public QObject
+{
+    Q_OBJECT
+
+    Q_PROPERTY(bool refreshing READ refreshing NOTIFY refreshingChanged)
+    Q_PROPERTY(bool available READ available NOTIFY availableChanged)
+    Q_PROPERTY(QString lastUpdated READ lastUpdated NOTIFY lastUpdatedChanged)
+    Q_PROPERTY(QStringList currencies READ currencies NOTIFY currenciesChanged)
+
+public:
+    explicit CurrencyService(CalculatorEngine *engine, QObject *parent = nullptr);
+    ~CurrencyService() override;
+
+    bool refreshing() const { return m_refreshing; }
+    bool available() const { return m_available; }
+    QString lastUpdated() const { return m_lastUpdated; }
+    QStringList currencies() const { return m_currencies; }
+
+    Q_INVOKABLE void refresh();
+
+    // Called once at startup (main.cpp): populate from cache immediately, and
+    // kick off an async refresh if rates are stale and we can fetch. Never blocks.
+    void refreshIfStale();
+
+Q_SIGNALS:
+    void refreshingChanged();
+    void availableChanged();
+    void lastUpdatedChanged();
+    void currenciesChanged();
+
+private:
+    void setRefreshing(bool v);
+    void setAvailable(bool v);
+    // Re-read cached state (currencies + lastUpdated + available) from CALCULATOR.
+    void syncFromCache();
+    // Applied on the GUI thread after a successful fetch.
+    void onFetchFinished(bool ok);
+
+    QStringList collectCurrencies() const;
+    QString formatUpdated(long long secs) const;
+
+    CalculatorEngine *m_engine = nullptr;
+    QThread *m_fetchThread = nullptr; // in-flight network fetch, if any
+
+    bool m_refreshing = false;
+    bool m_available = false;
+    QString m_lastUpdated;
+    QStringList m_currencies;
+};

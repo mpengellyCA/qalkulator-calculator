@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Kalk
+GenericName=Calculator
+Comment=A fast, keyboard-first calculator with unit and currency conversion
+Type=Application
+Exec=kalk
+Icon=io.github.mpengellyca.kalk
+Terminal=false
+Categories=Qt;Utility;Calculator;
+Keywords=calculator;calculate;math;maths;convert;unit;currency;exchange;
+StartupNotify=true
+X-DBUS-StartupType=Unique

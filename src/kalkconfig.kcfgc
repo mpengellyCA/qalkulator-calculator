@@ -1,0 +1,9 @@
+File=kalk.kcfg
+ClassName=KalkConfig
+NameSpace=
+Singleton=true
+Mutators=true
+DefaultValueGetters=true
+GenerateProperties=true
+ItemAccessors=true
+SetUserTexts=true

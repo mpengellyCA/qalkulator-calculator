@@ -1,0 +1,16 @@
+/build/
+/build-*/
+*.user
+*.autosave
+.cache/
+.kdev4/
+*.kdev4
+compile_commands.json
+.flatpak-builder/
+
+# Local Claude Code tooling
+.claude/
+
+# Internal planning docs (not part of the release)
+IMPLEMENTATION_PLAN.md
+Calculator-Design-Spec.md

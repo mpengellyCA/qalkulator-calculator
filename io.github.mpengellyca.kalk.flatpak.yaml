@@ -1,0 +1,62 @@
+# Flatpak manifest for Kalk (spec §12 — Flathub distribution).
+#
+# Template: the third-party module sources below need their `sha256` filled in
+# before `flatpak-builder` will run (libqalculate is pinned by git tag and needs
+# none). Build with:
+#   flatpak-builder --user --install --force-clean build-flatpak io.github.mpengellyca.kalk.flatpak.yaml
+#
+# libqalculate and its arithmetic deps (gmp, mpfr) are not in the KDE runtime, so
+# they are built here. libxml2, libcurl and icu are provided by the runtime.
+id: io.github.mpengellyca.kalk
+runtime: org.kde.Platform
+runtime-version: '6.9'
+sdk: org.kde.Sdk
+command: kalk
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  # Live exchange-rate refresh (CurrencyService); degrades gracefully offline.
+  - --share=network
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.a'
+  - '*.la'
+
+modules:
+  - name: gmp
+    config-opts:
+      - --enable-cxx
+    sources:
+      - type: archive
+        url: https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz
+        sha256: a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898
+
+  - name: mpfr
+    sources:
+      - type: archive
+        url: https://www.mpfr.org/mpfr-current/mpfr-4.2.1.tar.xz
+        sha256: 277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2
+
+  - name: libqalculate
+    buildsystem: autotools
+    config-opts:
+      - --disable-static
+      - --without-icu
+    sources:
+      - type: git
+        url: https://github.com/Qalculate/libqalculate.git
+        tag: v5.11.0
+
+  - name: kalk
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    sources:
+      - type: dir
+        path: .

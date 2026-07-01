@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<component type="desktop-application">
+  <id>io.github.mpengellyca.kalk</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+  <name>Kalk</name>
+  <summary>A fast, keyboard-first calculator for the desktop</summary>
+  <description>
+    <p>
+      Kalk is a calculator with the calm of a phone and the power of a desktop:
+      type naturally and watch the answer update live, keep every result in a
+      shared register you can reach by keyboard, and flow a value straight from a
+      calculation into a unit or currency conversion and back.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Calculate-as-you-type with a live result preview</li>
+      <li>A shared result register: recall and reuse any past result</li>
+      <li>Unit and currency conversion, powered by libqalculate</li>
+      <li>Frictionless flow of results between calculation and conversion</li>
+      <li>Keyboard-first, with visible shortcut cues and an Alt access-key overlay</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.mpengellyca.kalk.desktop</launchable>
+  <url type="homepage">https://github.com/mpengellyCA/kalk-calculator</url>
+  <url type="bugtracker">https://github.com/mpengellyCA/kalk-calculator/issues</url>
+  <url type="vcs-browser">https://github.com/mpengellyCA/kalk-calculator</url>
+  <developer id="io.github.mpengellyca">
+    <name>Mike Pengelly</name>
+  </developer>
+  <categories>
+    <category>Utility</category>
+    <category>Calculator</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <provides>
+    <binary>kalk</binary>
+  </provides>
+  <releases>
+    <release version="0.1.0" date="2026-06-30">
+      <description>
+        <p>Initial release.</p>
+      </description>
+    </release>
+  </releases>
+</component>
