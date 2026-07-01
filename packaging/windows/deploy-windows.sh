@@ -38,9 +38,11 @@ EXE="${STAGE}/bin/qalkulator.exe"
 # windeployqt scans our QML for imports and copies matching modules next to the
 # exe (QtQuick, org.kde.kirigami, …). It does NOT catch the org.kde.desktop
 # style (loaded by string at runtime) — handled below.
-# --no-translations: we ship none, and MSYS2's Qt lacks catalogs.json so the
-# translation step hard-fails. Compiler-runtime DLLs are covered by the ldd loop.
-windeployqt6 --release --no-translations --qmldir "${repo_root}/src/qml" "${EXE}"
+echo "== deploy-tool availability =="
+for _t in windeployqt6 qmlimportscanner qmlimportscanner6 lconvert lrelease qtpaths6 qmake6; do
+    echo "   ${_t}: $(command -v "${_t}" 2>/dev/null || echo MISSING)"
+done
+windeployqt6 --release --verbose 2 --no-translations --qmldir "${repo_root}/src/qml" "${EXE}"
 
 # --- 3. Hand-bundle the runtime-loaded org.kde.desktop QQC2 style + Kirigami --
 for mod in org/kde/desktop org/kde/kirigami; do
