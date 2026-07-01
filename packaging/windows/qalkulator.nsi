@@ -26,6 +26,11 @@ InstallDirRegKey HKLM "Software\${APPNAME}" "InstallDir"
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
 
+!ifdef ICON
+  Icon "${ICON}"
+  UninstallIcon "${ICON}"
+!endif
+
 Page directory
 Page instfiles
 UninstPage uninstConfirm

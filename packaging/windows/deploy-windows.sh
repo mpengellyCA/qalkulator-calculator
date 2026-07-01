@@ -127,6 +127,7 @@ if command -v makensis >/dev/null 2>&1; then
         -DVERSION="${VERSION}" \
         -DSTAGE="$(cygpath -w "${STAGE}")" \
         -DOUTDIR="$(cygpath -w "${repo_root}")" \
+        -DICON="$(cygpath -w "${repo_root}/packaging/windows/qalkulator.ico")" \
         "$(cygpath -w "${repo_root}/packaging/windows/qalkulator.nsi")"; then
         echo "==> Produced installer"
     else

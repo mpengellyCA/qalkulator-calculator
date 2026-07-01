@@ -10,6 +10,11 @@ target_sources(qalkulator PRIVATE
     currencyservice.h
 )
 
+# Windows: embed the app icon (Explorer/taskbar/title-bar icon).
+if(WIN32)
+    target_sources(qalkulator PRIVATE ${CMAKE_SOURCE_DIR}/packaging/windows/qalkulator.rc)
+endif()
+
 # KConfigXT: generates QalkulatorConfig (singleton) from qalkulator.kcfg + qalkulatorconfig.kcfgc
 kconfig_add_kcfg_files(qalkulator GENERATE_MOC qalkulatorconfig.kcfgc)
 

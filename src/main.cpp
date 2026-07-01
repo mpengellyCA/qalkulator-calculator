@@ -105,7 +105,13 @@ int main(int argc, char *argv[])
     aboutData.setBugAddress(QByteArrayLiteral("https://github.com/mpengellyCA/qalkulator-calculator/issues"));
     KAboutData::setApplicationData(aboutData);
 
-    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("io.github.mpengellyca.qalkulator")));
+    // On Linux the icon comes from the theme; on Windows fromTheme() is empty, so
+    // leave the window icon unset there and let the exe's embedded .ico (see
+    // packaging/windows/qalkulator.rc) drive the title-bar/taskbar icon.
+    const QIcon themeIcon = QIcon::fromTheme(QStringLiteral("io.github.mpengellyca.qalkulator"));
+    if (!themeIcon.isNull()) {
+        app.setWindowIcon(themeIcon);
+    }
     app.setApplicationName(QStringLiteral("qalkulator"));
     app.setDesktopFileName(QStringLiteral("io.github.mpengellyca.qalkulator"));
 
