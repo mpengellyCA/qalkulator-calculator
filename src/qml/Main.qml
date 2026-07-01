@@ -328,18 +328,14 @@ Kirigami.ApplicationWindow {
 
     // --- Results popup ----------------------------------------------------
     function openResultsPopup() {
-        // Anchor under the expression field.
-        var p = expressionField.mapToItem(appWindow.contentItem, 0,
-                                          expressionField.height);
-        resultsPopup.x = p.x;
-        resultsPopup.y = p.y + Kirigami.Units.smallSpacing;
-        resultsPopup.width = expressionField.width;
         resultsPopup.open();
     }
 
     ResultRegisterPopup {
         id: resultsPopup
-        parent: appWindow.contentItem
+        // Anchored to the expression field; it positions itself under the field
+        // and flips above it near the window bottom (see ResultRegisterPopup).
+        parent: expressionField
         onValueChosen: function (v) {
             expressionField.insertValue(v);
             expressionField.forceFocus();

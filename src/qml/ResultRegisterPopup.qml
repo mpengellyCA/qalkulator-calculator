@@ -17,6 +17,24 @@ import io.github.mpengellyca.qalkulator
 QQC2.Popup {
     id: root
 
+    // Anchored under its parent (the expression field). Opens downward, but flips
+    // above the field when it would be clipped by the window's bottom edge — so it
+    // is never cut off however short the window (or wherever the keypad sits).
+    property bool _flipUp: false
+    // Worst-case popup height used only to DECIDE the flip (the ListView's real
+    // contentHeight fills in async); the flipped y binds to the real implicitHeight.
+    readonly property real _estHeight: Kirigami.Units.gridUnit * 15
+    x: 0
+    width: parent ? parent.width : implicitWidth
+    y: _flipUp ? -(implicitHeight + Kirigami.Units.smallSpacing)
+               : ((parent ? parent.height : 0) + Kirigami.Units.smallSpacing)
+    onAboutToShow: {
+        const ov = QQC2.Overlay.overlay;
+        root._flipUp = (ov && parent)
+            ? (parent.mapToItem(ov, 0, parent.height).y + _estHeight > ov.height)
+            : false;
+    }
+
     readonly property string monoFamily: Style.monoFamily
 
     // Insert the chosen entry's value into the expression field.

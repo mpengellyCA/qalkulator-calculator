@@ -375,8 +375,20 @@ FocusScope {
         padding: 0
         closePolicy: QQC2.Popup.CloseOnPressOutside
         width: Kirigami.Units.gridUnit * 13
+        // Flip above the caret line when the suggestion list would be clipped by
+        // the window bottom (e.g. keypad closed → field sits near the bottom).
+        property bool _flipUp: false
+        readonly property real _estHeight: Kirigami.Units.gridUnit * 14
         x: Math.max(0, Math.min(field.cursorRectangle.x, field.width - width))
-        y: field.cursorRectangle.y + field.cursorRectangle.height + 2
+        y: _flipUp ? (field.cursorRectangle.y - implicitHeight - 2)
+                   : (field.cursorRectangle.y + field.cursorRectangle.height + 2)
+        onAboutToShow: {
+            const ov = QQC2.Overlay.overlay;
+            acPopup._flipUp = ov
+                ? (field.mapToItem(ov, 0, field.cursorRectangle.y + field.cursorRectangle.height).y
+                   + _estHeight > ov.height)
+                : false;
+        }
 
         background: Rectangle {
             color: Kirigami.Theme.backgroundColor
@@ -476,9 +488,6 @@ FocusScope {
     UnitPickerPopup {
         id: unitPicker
         parent: field
-        x: 0
-        y: field.height + 2
-        width: field.width
         onPicked: function (value) {
             root.insertValue(value + " ");
         }

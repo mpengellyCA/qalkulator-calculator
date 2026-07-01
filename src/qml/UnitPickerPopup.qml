@@ -15,6 +15,20 @@ import io.github.mpengellyca.qalkulator
 QQC2.Popup {
     id: root
 
+    // Anchored under its parent (the expression field); flips above it when it
+    // would be clipped by the window's bottom edge.
+    property bool _flipUp: false
+    readonly property real _estHeight: Kirigami.Units.gridUnit * 16
+    x: 0
+    width: parent ? parent.width : implicitWidth
+    y: _flipUp ? -(implicitHeight + 2) : ((parent ? parent.height : 0) + 2)
+    onAboutToShow: {
+        const ov = QQC2.Overlay.overlay;
+        root._flipUp = (ov && parent)
+            ? (parent.mapToItem(ov, 0, parent.height).y + _estHeight > ov.height)
+            : false;
+    }
+
     readonly property string monoFamily: Style.monoFamily
 
     // Emitted with the libqalculate-parseable unit value to insert.

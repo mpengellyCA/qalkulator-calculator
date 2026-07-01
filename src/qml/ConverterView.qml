@@ -226,10 +226,19 @@ Item {
     }
 
 
-    ColumnLayout {
+    // Scrollable so the converter form never overlaps the keypad when the window
+    // is short: the cards keep their size and the area scrolls instead of
+    // overflowing past its bounds onto the keypad below.
+    QQC2.ScrollView {
+        id: convScroll
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing * 1.5
-        spacing: Kirigami.Units.largeSpacing
+        contentWidth: availableWidth
+        QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AlwaysOff
+
+        ColumnLayout {
+            width: convScroll.availableWidth
+            spacing: Kirigami.Units.largeSpacing
 
         // --- Inbound source chip (§8 rule 5) -----------------------------
         Kirigami.Chip {
@@ -400,7 +409,7 @@ Item {
             Item { Layout.fillWidth: true } // keep the row left-aligned
         }
 
-        Item { Layout.fillHeight: true }
+        }
     }
 
     // A framed card holding a label plus a [big field][selector] row.
@@ -552,9 +561,18 @@ Item {
             width: Math.max(sel.width, Kirigami.Units.gridUnit * 10)
             // Right-align to the selector so a wider popup never spills off-window.
             x: sel.width - width
-            y: sel.height + 2
+            // Flip above the selector when the list would be clipped at the bottom.
+            property bool _flipUp: false
+            readonly property real _estHeight: Kirigami.Units.gridUnit * 16
+            y: _flipUp ? -(implicitHeight + 2) : (sel.height + 2)
             padding: 0
             modal: false
+            onAboutToShow: {
+                const ov = QQC2.Overlay.overlay;
+                popup._flipUp = ov
+                    ? (sel.mapToItem(ov, 0, sel.height).y + _estHeight > ov.height)
+                    : false;
+            }
 
             onOpened: {
                 // Restore the session-sticky, shared filter, then scroll to the
