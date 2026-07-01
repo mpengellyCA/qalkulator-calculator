@@ -6,12 +6,14 @@
 // services, registers them as QML singletons, and loads the QML UI.
 
 #include <QApplication>
+#include <QFile>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QResource>
 #include <QTimer>
 
 #ifdef Q_OS_WIN
@@ -80,6 +82,29 @@ int main(int argc, char *argv[])
     g_previousMessageHandler = qInstallMessageHandler(messageFilter);
 
     QApplication app(argc, argv);
+
+#ifdef Q_OS_WIN
+    // Windows has no system icon theme, so QQC2 `icon.name` (swap, history, clear,
+    // refresh…) resolve to nothing and the buttons render blank. MSYS2 ships Breeze
+    // as a compiled Qt resource (BINARY_ICONS_RESOURCE=ON, no loose SVGs) which the
+    // deploy bundles next to the exe — register it and make Breeze the theme so the
+    // icons resolve from :/icons/breeze.
+    {
+        // breeze-icons.rcc roots its content at ":/" (index.theme, actions/16/…),
+        // but a Qt icon theme must live at <searchpath>/<name>/. Remap it under
+        // "/icons/breeze" via registerResource()'s mapRoot so the theme resolves
+        // at :/icons/breeze.
+        const QString rcc = QCoreApplication::applicationDirPath()
+                            + QStringLiteral("/breeze-icons.rcc");
+        if (QFile::exists(rcc)
+            && QResource::registerResource(rcc, QStringLiteral("/icons/breeze"))) {
+            QIcon::setThemeSearchPaths(QIcon::themeSearchPaths()
+                                       << QStringLiteral(":/icons"));
+            QIcon::setThemeName(QStringLiteral("breeze"));
+        }
+        QIcon::setFallbackThemeName(QStringLiteral("breeze"));
+    }
+#endif
 
     // Kirigami looks best (and picks up Breeze) with the desktop style.
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {

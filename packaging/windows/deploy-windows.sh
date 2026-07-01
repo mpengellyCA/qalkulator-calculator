@@ -105,12 +105,22 @@ if [ -d "${PREFIX}/share/qalculate" ]; then
     cp -r "${PREFIX}/share/qalculate" "${STAGE}/share/qalculate"
 fi
 
-# --- 6. Breeze icon theme (Kirigami symbolic icons) --------------------------
-if [ -d "${PREFIX}/share/icons/breeze" ]; then
-    echo "==> Bundling Breeze icon theme"
+# --- 6. Breeze icon theme (Kirigami / QQC2 icon.name) ------------------------
+# MSYS2 builds breeze-icons with BINARY_ICONS_RESOURCE=ON + SKIP_INSTALL_ICONS=ON:
+# there are NO loose SVGs, just a compiled Qt resource (breeze-icons.rcc). Without
+# it, every theme icon (swap, history, clear, refresh…) renders blank on Windows.
+# Bundle the .rcc next to the exe; main.cpp registers it and sets the Breeze theme.
+_rcc="$(find "${PREFIX}" -name 'breeze-icons.rcc' 2>/dev/null | head -1)"
+if [ -n "${_rcc}" ]; then
+    echo "==> Bundling Breeze icon resource (${_rcc})"
+    cp "${_rcc}" "${STAGE}/bin/breeze-icons.rcc"
+elif [ -d "${PREFIX}/share/icons/breeze" ]; then
+    echo "==> Bundling Breeze icon theme (loose SVGs)"
     mkdir -p "${STAGE}/share/icons"
     cp -r "${PREFIX}/share/icons/breeze" "${STAGE}/share/icons/breeze"
     [ -d "${PREFIX}/share/icons/breeze-dark" ] && cp -r "${PREFIX}/share/icons/breeze-dark" "${STAGE}/share/icons/breeze-dark"
+else
+    echo "!! Breeze icons not found — theme icons will be blank on Windows"
 fi
 
 # --- 7. Portable ZIP ---------------------------------------------------------
