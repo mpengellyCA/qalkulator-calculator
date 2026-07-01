@@ -379,60 +379,70 @@ Item {
             }
         }
 
-        // --- Rate / info line --------------------------------------------
-        QQC2.Label {
-            Layout.fillWidth: true
-            Layout.topMargin: Kirigami.Units.smallSpacing
-            text: i18nc("@info conversion rate", "1 %1 = %2", root._labelFor(root.fromSel), root.convRate)
-            visible: root.convRate.length > 0 && !root.convError
-            color: Kirigami.Theme.disabledTextColor
-            font.family: root.monoFamily
-            font.pointSize: Kirigami.Theme.smallFont.pointSize
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-        }
-
-        // --- Updated date + refresh: tucked below the To value, bottom-left,
-        // small (9pt) and quiet.
+        // --- Info line: currency "updated" status on the left (currency only),
+        // conversion rate on the right edge. The row always reserves its height,
+        // so the rate appearing/updating never shifts the layout; the rate wraps
+        // to a second line rather than overlapping the left-hand status.
         RowLayout {
-            visible: root.isCurrency
             Layout.fillWidth: true
             Layout.topMargin: Kirigami.Units.smallSpacing
-            spacing: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.largeSpacing
 
-            Kirigami.Icon {
-                source: Currency.available ? "download" : "network-disconnect"
-                implicitWidth: 12
-                implicitHeight: 12
-                color: Kirigami.Theme.disabledTextColor
+            // Currency: last-updated status + refresh (hidden for unit conversion).
+            RowLayout {
+                visible: root.isCurrency
+                Layout.alignment: Qt.AlignTop
+                spacing: Kirigami.Units.smallSpacing
+
+                Kirigami.Icon {
+                    source: Currency.available ? "download" : "network-disconnect"
+                    implicitWidth: 12
+                    implicitHeight: 12
+                    color: Kirigami.Theme.disabledTextColor
+                }
+                QQC2.Label {
+                    text: Currency.available
+                          ? Currency.lastUpdated
+                          : i18nc("@info offline currency note", "offline — using cached rates")
+                    color: Kirigami.Theme.disabledTextColor
+                    font.pointSize: 9
+                }
+                QQC2.BusyIndicator {
+                    running: Currency.refreshing
+                    visible: Currency.refreshing
+                    implicitWidth: 14
+                    implicitHeight: 14
+                }
+                QQC2.ToolButton {
+                    icon.name: "view-refresh"
+                    icon.width: 14
+                    icon.height: 14
+                    display: QQC2.AbstractButton.IconOnly
+                    padding: Kirigami.Units.smallSpacing
+                    implicitWidth: 24
+                    implicitHeight: 24
+                    enabled: !Currency.refreshing
+                    onClicked: Currency.refresh()
+                    QQC2.ToolTip.text: i18nc("@info:tooltip", "Refresh exchange rates")
+                    QQC2.ToolTip.visible: hovered
+                }
             }
+
+            // Conversion rate, pinned to the right edge. Empty (but space-reserved)
+            // until there's a rate; wraps to two lines when the row is too narrow
+            // rather than overlapping the status on the left.
             QQC2.Label {
-                text: Currency.available
-                      ? Currency.lastUpdated
-                      : i18nc("@info offline currency note", "offline — using cached rates")
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignRight | Qt.AlignTop
+                text: (root.convRate.length > 0 && !root.convError)
+                      ? i18nc("@info conversion rate", "1 %1 = %2", root._labelFor(root.fromSel), root.convRate)
+                      : ""
                 color: Kirigami.Theme.disabledTextColor
-                font.pointSize: 9
+                font.family: root.monoFamily
+                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                horizontalAlignment: Text.AlignRight
+                wrapMode: Text.WordWrap
             }
-            QQC2.BusyIndicator {
-                running: Currency.refreshing
-                visible: Currency.refreshing
-                implicitWidth: 14
-                implicitHeight: 14
-            }
-            QQC2.ToolButton {
-                icon.name: "view-refresh"
-                icon.width: 14
-                icon.height: 14
-                display: QQC2.AbstractButton.IconOnly
-                padding: Kirigami.Units.smallSpacing
-                implicitWidth: 24
-                implicitHeight: 24
-                enabled: !Currency.refreshing
-                onClicked: Currency.refresh()
-                QQC2.ToolTip.text: i18nc("@info:tooltip", "Refresh exchange rates")
-                QQC2.ToolTip.visible: hovered
-            }
-            Item { Layout.fillWidth: true } // keep the row left-aligned
         }
 
         Item { Layout.fillHeight: true }
