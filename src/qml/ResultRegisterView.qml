@@ -27,11 +27,13 @@ Item {
 
     ListView {
         id: list
-        // Center the tape in the display area: while the results don't fill it
-        // they sit vertically centred; once they overflow it fills and scrolls.
-        width: parent.width
+        // Pin the tape to the bottom of the display (nearest the input): results
+        // sit just above the expression field, and once they overflow the list
+        // fills the area and scrolls (newest at the bottom).
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
         height: Math.min(contentHeight, parent.height)
-        anchors.centerIn: parent
         clip: true
         spacing: 0
         model: Register

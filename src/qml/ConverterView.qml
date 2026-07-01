@@ -236,6 +236,10 @@ Item {
         anchors.margins: Kirigami.Units.largeSpacing * 1.5
         spacing: Kirigami.Units.largeSpacing
 
+        // Top spacer — pairs with the bottom one to vertically centre the form
+        // in the tab (the window's fit-to-content minimum guarantees it fits).
+        Item { Layout.fillHeight: true }
+
         // --- Inbound source chip (§8 rule 5) -----------------------------
         Kirigami.Chip {
             visible: root.inboundTag.length > 0
