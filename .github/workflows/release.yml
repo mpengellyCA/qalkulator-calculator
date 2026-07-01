@@ -1,0 +1,234 @@
+# Build Kalk for every Linux packaging format and publish a GitHub release on
+# each push to main. Version = <X.Y from VERSION> . <hex(commit_count-1)>, so every
+# commit on main gets a unique tag (e.g. v0.1.1, v0.1.a, v0.1.10). See version.sh.
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history — version.sh counts commits
+      - id: v
+        run: |
+          version="$(./version.sh)"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}"    >> "$GITHUB_OUTPUT"
+          echo "Kalk version: ${version} (tag v${version})"
+
+  # --- Debian/Ubuntu .deb + raw .tar.gz (Debian trixie: Qt6.8 + KF6) ---------
+  deb-tgz:
+    needs: version
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install build deps
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build extra-cmake-modules pkgconf git file \
+            qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools \
+            libkf6kirigami-dev libkf6coreaddons-dev libkf6config-dev libkf6i18n-dev \
+            libqalculate-dev
+      - uses: actions/checkout@v4
+      - name: Configure + build
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DKALK_VERSION="${{ needs.version.outputs.version }}"
+          cmake --build build
+      - name: Package (TGZ + DEB)
+        working-directory: build
+        run: cpack -G "TGZ;DEB" --verbose
+      - name: Collect
+        run: |
+          mkdir -p dist
+          cp build/*.tar.gz build/*.deb dist/
+          ls -lh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-tgz
+          path: dist/*
+
+  # --- Fedora/RHEL .rpm ------------------------------------------------------
+  rpm:
+    needs: version
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build deps
+        run: |
+          dnf install -y \
+            gcc-c++ cmake ninja-build extra-cmake-modules pkgconf-pkg-config git rpm-build \
+            qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qttools-devel \
+            kf6-kirigami-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-ki18n-devel \
+            libqalculate-devel
+      - uses: actions/checkout@v4
+      - name: Configure + build
+        run: |
+          cmake -B build -S . -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DKALK_VERSION="${{ needs.version.outputs.version }}"
+          cmake --build build
+      - name: Package (RPM)
+        working-directory: build
+        run: cpack -G RPM --verbose
+      - name: Collect
+        run: |
+          mkdir -p dist
+          cp build/*.rpm dist/
+          ls -lh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm
+          path: dist/*
+
+  # --- Arch .pkg.tar.zst + PKGBUILD -----------------------------------------
+  arch:
+    needs: version
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install build deps
+        run: |
+          pacman -Syu --noconfirm --needed \
+            base-devel git cmake extra-cmake-modules \
+            qt6-base qt6-declarative qt6-tools \
+            kirigami kcoreaddons kconfig ki18n libqalculate qqc2-desktop-style
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build package (makepkg as non-root)
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -eux
+          mkdir -p arch-build
+          # Local source tarball matching GitHub's tag-tarball layout.
+          git archive --format=tar.gz --prefix="kalk-calculator-${VERSION}/" HEAD \
+            -o "arch-build/kalk-${VERSION}.tar.gz"
+          # CI PKGBUILD: pin version, source from the local tarball, skip integ.
+          sed -e "s/^pkgver=.*/pkgver=${VERSION}/" \
+              -e "s#^source=.*#source=(\"kalk-${VERSION}.tar.gz\")#" \
+              packaging/arch/PKGBUILD > arch-build/PKGBUILD
+          # Release-facing PKGBUILD: keep the tag-tarball source, just pin version.
+          sed "s/^pkgver=.*/pkgver=${VERSION}/" packaging/arch/PKGBUILD > "arch-build/PKGBUILD.release"
+          useradd -m builder
+          chown -R builder:builder arch-build
+          su builder -c "cd '$PWD/arch-build' && makepkg -f --nodeps --skipinteg"
+      - name: Collect
+        run: |
+          mkdir -p dist
+          cp arch-build/*.pkg.tar.zst dist/
+          cp arch-build/PKGBUILD.release dist/PKGBUILD
+          ls -lh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch
+          path: dist/*
+
+  # --- AppImage (Debian trixie base) ----------------------------------------
+  appimage:
+    needs: version
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+      options: --privileged        # linuxdeploy needs to mount/extract AppImages
+    continue-on-error: true         # most fragile format — don't block the release
+    steps:
+      - name: Install build deps
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build extra-cmake-modules pkgconf git file wget \
+            ca-certificates fuse libfuse2 desktop-file-utils librsvg2-bin \
+            qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-tools-dev-tools \
+            libkf6kirigami-dev libkf6coreaddons-dev libkf6config-dev libkf6i18n-dev \
+            libqalculate-dev \
+            qml6-module-org-kde-kirigami qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts qml6-module-qtquick-window \
+            qml6-module-qtquick-templates qqc2-desktop-style breeze-icon-theme
+      - uses: actions/checkout@v4
+      - name: Build AppImage
+        run: ./packaging/appimage/build-appimage.sh "${{ needs.version.outputs.version }}"
+      - name: Collect
+        run: |
+          mkdir -p dist
+          cp ./*.AppImage dist/
+          ls -lh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: dist/*
+
+  # --- Flatpak bundle -------------------------------------------------------
+  flatpak:
+    needs: version
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.9
+      options: --privileged
+    continue-on-error: true         # runtime image availability can lag — don't block
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject version into manifest
+        run: |
+          sed -i "/- -DCMAKE_BUILD_TYPE=RelWithDebInfo/a\\      - -DKALK_VERSION=${{ needs.version.outputs.version }}" \
+            io.github.mpengellyca.kalk.flatpak.yaml
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: io.github.mpengellyca.kalk-${{ needs.version.outputs.version }}.flatpak
+          manifest-path: io.github.mpengellyca.kalk.flatpak.yaml
+          cache-key: flatpak-builder-${{ github.sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flatpak
+          path: ./*.flatpak
+
+  # --- Publish the release with every asset that built ----------------------
+  # Runs once the core formats (deb/tgz/rpm/arch) succeed. appimage + flatpak are
+  # continue-on-error, so they never block the release but still attach if built.
+  release:
+    needs: [version, deb-tgz, rpm, arch, appimage, flatpak]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List assets
+        run: ls -lhR dist
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Kalk ${{ needs.version.outputs.version }}
+          fail_on_unmatched_files: false
+          files: dist/*
+          body: |
+            **Kalk ${{ needs.version.outputs.version }}** — a fast, keyboard-first calculator with unit and currency conversion.
+
+            ### Install
+            - **Debian/Ubuntu:** `sudo apt install ./kalk-*.deb`
+            - **Fedora/RHEL:** `sudo dnf install ./kalk-*.rpm`
+            - **Arch:** `sudo pacman -U kalk-*.pkg.tar.zst` (or build with the bundled `PKGBUILD`)
+            - **Flatpak:** `flatpak install --user ./io.github.mpengellyca.kalk-*.flatpak`
+            - **AppImage:** `chmod +x Kalk-*.AppImage && ./Kalk-*.AppImage`
+            - **Portable:** extract `kalk-*.tar.gz` under `/usr`

@@ -30,6 +30,10 @@
 #include "kalkconfig.h"
 #include "resultregistermodel.h"
 
+#ifndef KALK_VERSION
+#define KALK_VERSION "0.1.0-dev"
+#endif
+
 namespace
 {
 QtMessageHandler g_previousMessageHandler = nullptr;
@@ -66,7 +70,7 @@ int main(int argc, char *argv[])
     KAboutData aboutData(
         QStringLiteral("kalk"),
         i18nc("@title", "Kalk"),
-        QStringLiteral("0.1.0"),
+        QStringLiteral(KALK_VERSION),
         i18n("A fast, keyboard-first calculator for the desktop."),
         KAboutLicense::Custom,
         i18n("© 2026 Mike Pengelly"));

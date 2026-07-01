@@ -39,6 +39,8 @@ ecm_target_qml_sources(kalk SOURCES ../qml/Style.qml ../qml/Units.qml)
 
 target_include_directories(kalk PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
+target_compile_definitions(kalk PRIVATE KALK_VERSION="${KALK_VERSION}")
+
 target_link_libraries(kalk PRIVATE
     Qt6::Core
     Qt6::Gui

@@ -8,6 +8,18 @@
 compile_commands.json
 .flatpak-builder/
 
+# Packaging build scratch + output artifacts
+/AppDir/
+/arch-build/
+/.appimage-tools/
+*.AppImage
+*.pkg.tar.zst
+*.deb
+*.rpm
+*.flatpak
+/*.tar.gz
+/*.tar.xz
+
 # Local Claude Code tooling
 .claude/
 
