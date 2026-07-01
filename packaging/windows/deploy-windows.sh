@@ -60,16 +60,18 @@ Qml2Imports = qml
 QTCONF
 echo "==> Wrote qt.conf (Qml2Imports=qml)"
 
-# --- 3. Hand-bundle the runtime-loaded org.kde.desktop QQC2 style + Kirigami --
-# These go under bin/qml too (windeployqt's import root; org.kde.desktop is loaded
-# by string, so qmlimportscanner never sees it).
-for mod in org/kde/desktop org/kde/kirigami; do
-    if [ -d "${QT_QML}/${mod}" ] && [ ! -d "${STAGE}/bin/qml/${mod}" ]; then
-        echo "==> Bundling QML module ${mod}"
-        mkdir -p "${STAGE}/bin/qml/$(dirname "${mod}")"
-        cp -r "${QT_QML}/${mod}" "${STAGE}/bin/qml/${mod}"
-    fi
-done
+# --- 3. Hand-bundle the org.kde.desktop QQC2 style + ALL its transitive QML deps.
+# org.kde.desktop is selected by string (qmlimportscanner never sees it) and it
+# pulls in org.kde.qqc2desktopstyle.private, org.kde.sonnet, org.kde.kirigami, …
+# A single missing module makes Kirigami.ApplicationWindow unavailable, so Main
+# fails to load and the app silently exits (-1). Copy the whole org/kde QML tree
+# (into bin/qml, windeployqt's import root) so nothing is left out; the DLL
+# closure below then pulls each plugin's C++ libs.
+if [ -d "${QT_QML}/org/kde" ]; then
+    echo "==> Bundling org/kde QML modules (desktop style + transitive deps)"
+    mkdir -p "${STAGE}/bin/qml/org/kde"
+    cp -r "${QT_QML}/org/kde/." "${STAGE}/bin/qml/org/kde/"
+fi
 
 # --- 4. Close the DLL dependency graph (KF6, libqalculate + transitive) -------
 # windeployqt only handles Qt libraries; KF6 and libqalculate DLLs (and the DLLs
