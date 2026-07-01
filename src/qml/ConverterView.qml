@@ -60,6 +60,14 @@ Item {
         amountField.forceActiveFocus();
     }
 
+    // Open the recent-results dropdown, filtered to amounts usable here (raw
+    // numbers or quantities compatible with the current From unit; see the C++
+    // Engine.compatibleAmounts). Picking one loads it into the amount field.
+    function _openHistory() {
+        amountHistory.entries = Engine.compatibleAmounts(root.fromSel);
+        amountHistory.open();
+    }
+
     // --- Unit catalogue (grouped by type) --------------------------------
     // Shared source of truth (also used by the Calculator's unit autocomplete).
     readonly property var unitCategories: Units.categories
@@ -229,6 +237,14 @@ Item {
         onActivated: root.swap()
     }
 
+    // Recent-results dropdown, anchored under the amount field. On pick, load the
+    // (already From-unit) amount into the converter.
+    AmountHistoryPopup {
+        id: amountHistory
+        parent: amountField
+        onPicked: function (amount) { root.loadAmount(amount); }
+    }
+
 
     ColumnLayout {
         id: convColumn
@@ -281,8 +297,18 @@ Item {
                             root.copyRequested();
                             event.accepted = true;
                         }
+                    } else if (event.key === Qt.Key_Down && (event.modifiers & Qt.ControlModifier)) {
+                        root._openHistory();
+                        event.accepted = true;
                     }
                 }
+            }
+            QQC2.ToolButton {
+                icon.name: "view-history"
+                display: QQC2.AbstractButton.IconOnly
+                onClicked: root._openHistory()
+                QQC2.ToolTip.text: i18nc("@info:tooltip", "Insert a recent result (⌃↓)")
+                QQC2.ToolTip.visible: hovered
             }
             QQC2.ToolButton {
                 visible: amountField.text.length > 0

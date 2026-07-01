@@ -178,6 +178,7 @@ Kirigami.ApplicationWindow {
             ];
         }
         return [
+            { keycap: "⌃↓", label: i18nc("@info status hint", "recent") },
             { keycap: "⌃S", label: i18nc("@info status hint", "swap") },
             { keycap: "⌃←", label: i18nc("@info status hint", "to calc") },
             { keycap: "⌃C", label: i18nc("@info status hint", "copy") }

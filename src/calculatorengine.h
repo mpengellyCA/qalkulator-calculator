@@ -26,6 +26,7 @@
 #include <QRecursiveMutex>
 #include <QString>
 #include <QStringList>
+#include <QVariantList>
 
 class ResultRegisterModel;
 class QThread;
@@ -61,6 +62,12 @@ public:
     Q_INVOKABLE void updateConversion(const QString &amount, const QString &fromUnit, const QString &toUnit, bool isCurrency, int channel);
     Q_INVOKABLE QString ansToken() const;
     Q_INVOKABLE QStringList currencyCodes() const;
+    // For the converter's history dropdown: the register entries usable as an
+    // amount FROM `fromUnit` — a raw (dimensionless) number, or a quantity whose
+    // unit is convertible to fromUnit (currencies inter-convert). Newest first.
+    // Each map is {expression, value, amount} where `amount` is a clean,
+    // re-parseable number expressed in `fromUnit`.
+    Q_INVOKABLE QVariantList compatibleAmounts(const QString &fromUnit) const;
     Q_INVOKABLE void copyToClipboard(const QString &text);
 
     // Shared serialization lock for CurrencyService.

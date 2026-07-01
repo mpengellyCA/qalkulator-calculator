@@ -20,6 +20,7 @@ set(QALKULATOR_QML_FILES
     qml/ResultPreview.qml
     qml/ResultRegisterView.qml
     qml/ResultRegisterPopup.qml
+    qml/AmountHistoryPopup.qml
     qml/Keypad.qml
     qml/ConverterView.qml
     qml/StatusBar.qml

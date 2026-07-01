@@ -470,4 +470,85 @@ QStringList CalculatorEngine::currencyCodes() const
     return hoisted + codes;
 }
 
+QVariantList CalculatorEngine::compatibleAmounts(const QString &fromUnit) const
+{
+    QVariantList out;
+    const QString from = fromUnit.trimmed();
+    if (!m_registerModel || from.isEmpty() || !CALCULATOR) {
+        return out;
+    }
+
+    QMutexLocker<QRecursiveMutex> lock(&m_calcMutex);
+
+    // Drain the message queue after a calculation, noting whether it errored.
+    auto hadError = []() -> bool {
+        bool err = false;
+        while (CalculatorMessage *m = CALCULATOR->message()) {
+            if (m->type() == MESSAGE_ERROR) {
+                err = true;
+            }
+            CALCULATOR->nextMessage();
+        }
+        return err;
+    };
+
+    const std::string U = from.toStdString();
+    EvaluationOptions eo;
+    PrintOptions po;
+    po.use_unicode_signs = false;
+    po.number_fraction_format = FRACTION_DECIMAL; // never emit "8001/5000" as an amount
+
+    static const QRegularExpression wsRe(QStringLiteral("\\s+"));
+
+    for (int i = m_registerModel->count() - 1; i >= 0; --i) { // newest first
+        const QString value = m_registerModel->valueAt(i);
+        const QString expression = m_registerModel->expressionAt(i);
+        if (value.trimmed().isEmpty()) {
+            continue;
+        }
+
+        CALCULATOR->clearMessages();
+        MathStructure m;
+        CALCULATOR->calculate(&m, value.toStdString(), 400, eo);
+        if (CALCULATOR->aborted() || hadError()) {
+            continue;
+        }
+
+        QString amount;
+        if (!m.containsType(STRUCT_UNIT)) {
+            // Dimensionless → a raw number, usable as an amount as-is.
+            if (!m.representsNumber()) {
+                continue; // skip symbols / booleans / undefined
+            }
+            amount = value;
+            amount.remove(wsRe); // strip digit-grouping so it re-parses cleanly
+        } else {
+            // Carries a unit → usable iff value / (1 fromUnit) is dimensionless
+            // (same physical dimension; currencies cancel via the exchange rate).
+            CALCULATOR->clearMessages();
+            MathStructure ratio;
+            const std::string testExpr = "(" + value.toStdString() + ")/(" + U + ")";
+            CALCULATOR->calculate(&ratio, testExpr, 400, eo);
+            if (CALCULATOR->aborted() || hadError()
+                || ratio.containsType(STRUCT_UNIT) || !ratio.representsNumber()) {
+                continue;
+            }
+            ratio.format(po);
+            amount = QString::fromStdString(ratio.print(po));
+            amount.remove(wsRe);
+        }
+
+        if (amount.isEmpty()) {
+            continue;
+        }
+
+        QVariantMap row;
+        row.insert(QStringLiteral("expression"), expression);
+        row.insert(QStringLiteral("value"), value);
+        row.insert(QStringLiteral("amount"), amount);
+        out.append(row);
+    }
+    return out;
+}
+
 #include "calculatorengine.moc"
