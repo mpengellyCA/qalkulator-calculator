@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Mike Pengelly <https://github.com/mpengellyCA>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Build, deploy and package Kalk for Windows using MSYS2 (UCRT64).
+# All dependencies (Qt6, KF6/Kirigami, libqalculate) are prebuilt MSYS2 packages,
+# so this mirrors the Linux jobs: cmake build → install into a stage dir →
+# gather every runtime DLL/QML module → zip (+ NSIS installer).
+#
+# Run inside an MSYS2 UCRT64 shell from the repo root.
+# Usage: packaging/windows/deploy-windows.sh [VERSION]
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "${repo_root}"
+
+VERSION="${1:-$(./version.sh)}"
+PREFIX="/ucrt64"
+STAGE="${repo_root}/pkg-windows/Kalk"
+QT_QML="${PREFIX}/share/qt6/qml"
+
+echo "==> Building Kalk ${VERSION} for Windows (MSYS2 UCRT64)"
+rm -rf "${repo_root}/pkg-windows" build-windows
+mkdir -p "${STAGE}"
+
+# --- 1. Configure, build, install into the stage dir --------------------------
+cmake -B build-windows -S . -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
+    -DKALK_VERSION="${VERSION}"
+cmake --build build-windows
+cmake --install build-windows --prefix "${STAGE}"
+
+EXE="${STAGE}/bin/kalk.exe"
+[ -f "${EXE}" ] || { echo "!! kalk.exe not found at ${EXE}"; exit 1; }
+
+# --- 2. Qt/QML deployment (Qt DLLs, platform plugin, imported QML modules) ----
+# windeployqt scans our QML for imports and copies matching modules next to the
+# exe (QtQuick, org.kde.kirigami, …). It does NOT catch the org.kde.desktop
+# style (loaded by string at runtime) — handled below.
+windeployqt6 --release --compiler-runtime --qmldir "${repo_root}/qml" "${EXE}"
+
+# --- 3. Hand-bundle the runtime-loaded org.kde.desktop QQC2 style + Kirigami --
+for mod in org/kde/desktop org/kde/kirigami; do
+    if [ -d "${QT_QML}/${mod}" ] && [ ! -d "${STAGE}/bin/${mod}" ]; then
+        echo "==> Bundling QML module ${mod}"
+        mkdir -p "${STAGE}/bin/$(dirname "${mod}")"
+        cp -r "${QT_QML}/${mod}" "${STAGE}/bin/${mod}"
+    fi
+done
+
+# --- 4. Close the DLL dependency graph (KF6, libqalculate + transitive) -------
+# windeployqt only handles Qt libraries; KF6 and libqalculate DLLs (and the DLLs
+# pulled in by the bundled QML plugins) must be resolved by hand. Iterate ldd
+# over every PE file in the stage until no new MSYS2 DLL is copied.
+echo "==> Resolving DLL dependencies"
+for pass in $(seq 1 20); do
+    copied=0
+    while IFS= read -r dep; do
+        [ -z "${dep}" ] && continue
+        base="$(basename "${dep}")"
+        if [ ! -f "${STAGE}/bin/${base}" ]; then
+            cp "${dep}" "${STAGE}/bin/"
+            copied=1
+        fi
+    done < <(
+        find "${STAGE}" \( -iname '*.dll' -o -iname '*.exe' \) -print0 \
+          | xargs -0 -r -n1 ldd 2>/dev/null \
+          | awk '{print $3}' \
+          | grep -iE "^${PREFIX}/bin/.*\.dll$" \
+          | sort -u
+    )
+    echo "   pass ${pass}: copied=${copied}"
+    [ "${copied}" -eq 0 ] && break
+done
+
+# --- 5. libqalculate definition data (units/currencies loaded at runtime) -----
+if [ -d "${PREFIX}/share/qalculate" ]; then
+    echo "==> Bundling libqalculate data"
+    mkdir -p "${STAGE}/share"
+    cp -r "${PREFIX}/share/qalculate" "${STAGE}/share/qalculate"
+fi
+
+# --- 6. Breeze icon theme (Kirigami symbolic icons) --------------------------
+if [ -d "${PREFIX}/share/icons/breeze" ]; then
+    echo "==> Bundling Breeze icon theme"
+    mkdir -p "${STAGE}/share/icons"
+    cp -r "${PREFIX}/share/icons/breeze" "${STAGE}/share/icons/breeze"
+    [ -d "${PREFIX}/share/icons/breeze-dark" ] && cp -r "${PREFIX}/share/icons/breeze-dark" "${STAGE}/share/icons/breeze-dark"
+fi
+
+# --- 7. Portable ZIP ---------------------------------------------------------
+ZIP="${repo_root}/Kalk-${VERSION}-windows-x86_64.zip"
+echo "==> Packaging portable zip"
+( cd "${repo_root}/pkg-windows" && bsdtar -a -cf "${ZIP}" Kalk )
+echo "==> Produced: ${ZIP}"
+
+# --- 8. NSIS installer (best-effort — never fails the build) ------------------
+if command -v makensis >/dev/null 2>&1; then
+    echo "==> Building NSIS installer"
+    # mingw makensis needs native Windows paths, not MSYS /d/a/... paths.
+    if makensis \
+        -DVERSION="${VERSION}" \
+        -DSTAGE="$(cygpath -w "${STAGE}")" \
+        -DOUTDIR="$(cygpath -w "${repo_root}")" \
+        "$(cygpath -w "${repo_root}/packaging/windows/kalk.nsi")"; then
+        echo "==> Produced installer"
+    else
+        echo "!! NSIS installer failed (non-fatal); portable zip still produced"
+    fi
+else
+    echo "!! makensis not found; skipping installer"
+fi
+
+ls -lh "${repo_root}"/Kalk-*.zip "${repo_root}"/Kalk-*-Setup.exe 2>/dev/null || true
