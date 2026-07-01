@@ -27,7 +27,11 @@ Item {
 
     ListView {
         id: list
-        anchors.fill: parent
+        // Center the tape in the display area: while the results don't fill it
+        // they sit vertically centred; once they overflow it fills and scrolls.
+        width: parent.width
+        height: Math.min(contentHeight, parent.height)
+        anchors.centerIn: parent
         clip: true
         spacing: 0
         model: Register
@@ -41,15 +45,6 @@ Item {
         Component.onCompleted: Qt.callLater(list.positionViewAtEnd)
 
         QQC2.ScrollBar.vertical: QQC2.ScrollBar { policy: QQC2.ScrollBar.AsNeeded }
-
-        // Empty-state hint.
-        QQC2.Label {
-            anchors.centerIn: parent
-            visible: list.count === 0
-            text: i18nc("@info placeholder empty tape", "Results will appear here")
-            color: Kirigami.Theme.disabledTextColor
-            font: Kirigami.Theme.smallFont
-        }
 
         delegate: QQC2.ItemDelegate {
             id: rowDelegate
@@ -119,5 +114,15 @@ Item {
                 }
             }
         }
+    }
+
+    // Empty-state hint — in the root so it stays centred when the tape is empty
+    // (the centred ListView collapses to zero height with no rows).
+    QQC2.Label {
+        anchors.centerIn: parent
+        visible: list.count === 0
+        text: i18nc("@info placeholder empty tape", "Results will appear here")
+        color: Kirigami.Theme.disabledTextColor
+        font: Kirigami.Theme.smallFont
     }
 }

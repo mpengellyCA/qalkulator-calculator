@@ -20,7 +20,12 @@ Kirigami.ApplicationWindow {
     title: i18nc("@title:window", "QalKulator")
 
     minimumWidth: Kirigami.Units.gridUnit * 20   // ~360 px
-    minimumHeight: Kirigami.Units.gridUnit * 26  // ~480 px
+    // Never shrink past the point where the current tab + keypad fit (so the
+    // keypad can't overlap the converter). All content-based, so no scrollbar.
+    minimumHeight: modeBar.implicitHeight
+                 + centerStack.Layout.minimumHeight
+                 + (keypad.visible ? keypad.implicitHeight : 0)
+                 + statusBar.implicitHeight
     width: Kirigami.Units.gridUnit * 24
     height: Kirigami.Units.gridUnit * 34
 
@@ -205,6 +210,11 @@ Kirigami.ApplicationWindow {
                 id: centerStack
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                // A fixed minimum shared by every tab = the tallest tab (a
+                // converter). Keeps all tabs the same minimum height and drives
+                // the window's minimum so nothing gets clipped or overlapped.
+                Layout.minimumHeight: Math.max(unitsView.implicitHeight,
+                                               currencyView.implicitHeight)
                 currentIndex: appWindow.mode
 
                 // (0) Calculator stack.

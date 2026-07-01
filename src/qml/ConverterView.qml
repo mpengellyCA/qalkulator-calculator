@@ -16,6 +16,10 @@ import io.github.mpengellyca.qalkulator
 Item {
     id: root
 
+    // Natural height of the form (incl. its margins) — lets the window compute a
+    // minimum tall enough that the keypad never overlaps the converter.
+    implicitHeight: convColumn.implicitHeight
+
     readonly property string monoFamily: Style.monoFamily
 
     property bool isCurrency: false
@@ -226,19 +230,11 @@ Item {
     }
 
 
-    // Scrollable so the converter form never overlaps the keypad when the window
-    // is short: the cards keep their size and the area scrolls instead of
-    // overflowing past its bounds onto the keypad below.
-    QQC2.ScrollView {
-        id: convScroll
+    ColumnLayout {
+        id: convColumn
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing * 1.5
-        contentWidth: availableWidth
-        QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AlwaysOff
-
-        ColumnLayout {
-            width: convScroll.availableWidth
-            spacing: Kirigami.Units.largeSpacing
+        spacing: Kirigami.Units.largeSpacing
 
         // --- Inbound source chip (§8 rule 5) -----------------------------
         Kirigami.Chip {
@@ -409,7 +405,7 @@ Item {
             Item { Layout.fillWidth: true } // keep the row left-aligned
         }
 
-        }
+        Item { Layout.fillHeight: true }
     }
 
     // A framed card holding a label plus a [big field][selector] row.
