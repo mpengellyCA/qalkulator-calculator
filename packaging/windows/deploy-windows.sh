@@ -48,12 +48,26 @@ if [ ! -e "${PREFIX}/bin/qmlimportscanner.exe" ]; then
 fi
 windeployqt6 --release --no-translations --qmldir "${repo_root}/src/qml" "${EXE}"
 
+# windeployqt lays QML modules under bin/qml and plugins under bin/<type>, but
+# MSYS2's Qt has an absolute (build-tree) QML import path, so on the target the
+# app can't find any QML module without a qt.conf — it then silently exits
+# (loadFromModule fails → main returns -1). Prefix=. makes every path app-relative.
+cat > "${STAGE}/bin/qt.conf" <<'QTCONF'
+[Paths]
+Prefix = .
+Plugins = .
+Qml2Imports = qml
+QTCONF
+echo "==> Wrote qt.conf (Qml2Imports=qml)"
+
 # --- 3. Hand-bundle the runtime-loaded org.kde.desktop QQC2 style + Kirigami --
+# These go under bin/qml too (windeployqt's import root; org.kde.desktop is loaded
+# by string, so qmlimportscanner never sees it).
 for mod in org/kde/desktop org/kde/kirigami; do
-    if [ -d "${QT_QML}/${mod}" ] && [ ! -d "${STAGE}/bin/${mod}" ]; then
+    if [ -d "${QT_QML}/${mod}" ] && [ ! -d "${STAGE}/bin/qml/${mod}" ]; then
         echo "==> Bundling QML module ${mod}"
-        mkdir -p "${STAGE}/bin/$(dirname "${mod}")"
-        cp -r "${QT_QML}/${mod}" "${STAGE}/bin/${mod}"
+        mkdir -p "${STAGE}/bin/qml/$(dirname "${mod}")"
+        cp -r "${QT_QML}/${mod}" "${STAGE}/bin/qml/${mod}"
     fi
 done
 

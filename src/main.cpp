@@ -50,6 +50,13 @@ void messageFilter(QtMsgType type, const QMessageLogContext &context, const QStr
     }
     if (g_previousMessageHandler) {
         g_previousMessageHandler(type, context, message);
+    } else {
+        // qInstallMessageHandler() returns nullptr when it replaced Qt's built-in
+        // default, so forwarding only "if previous" would swallow ALL output —
+        // which on Windows hid QML load failures entirely (the app just exited
+        // -1 with no message). Emit the formatted line to stderr instead.
+        fprintf(stderr, "%s\n", qUtf8Printable(qFormatLogMessage(type, context, message)));
+        fflush(stderr);
     }
 }
 } // namespace
