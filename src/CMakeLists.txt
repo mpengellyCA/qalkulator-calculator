@@ -1,6 +1,6 @@
-add_executable(kalk)
+add_executable(qalkulator)
 
-target_sources(kalk PRIVATE
+target_sources(qalkulator PRIVATE
     main.cpp
     calculatorengine.cpp
     calculatorengine.h
@@ -10,10 +10,10 @@ target_sources(kalk PRIVATE
     currencyservice.h
 )
 
-# KConfigXT: generates KalkConfig (singleton) from kalk.kcfg + kalkconfig.kcfgc
-kconfig_add_kcfg_files(kalk GENERATE_MOC kalkconfig.kcfgc)
+# KConfigXT: generates QalkulatorConfig (singleton) from qalkulator.kcfg + qalkulatorconfig.kcfgc
+kconfig_add_kcfg_files(qalkulator GENERATE_MOC qalkulatorconfig.kcfgc)
 
-set(KALK_QML_FILES
+set(QALKULATOR_QML_FILES
     ../qml/Main.qml
     ../qml/ModeBar.qml
     ../qml/ExpressionField.qml
@@ -33,15 +33,15 @@ set(KALK_QML_FILES
 set_source_files_properties(../qml/Style.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(../qml/Units.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
-ecm_add_qml_module(kalk URI io.github.mpengellyca.kalk GENERATE_PLUGIN_SOURCE)
-ecm_target_qml_sources(kalk SOURCES ${KALK_QML_FILES})
-ecm_target_qml_sources(kalk SOURCES ../qml/Style.qml ../qml/Units.qml)
+ecm_add_qml_module(qalkulator URI io.github.mpengellyca.qalkulator GENERATE_PLUGIN_SOURCE)
+ecm_target_qml_sources(qalkulator SOURCES ${QALKULATOR_QML_FILES})
+ecm_target_qml_sources(qalkulator SOURCES ../qml/Style.qml ../qml/Units.qml)
 
-target_include_directories(kalk PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(qalkulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_compile_definitions(kalk PRIVATE KALK_VERSION="${KALK_VERSION}")
+target_compile_definitions(qalkulator PRIVATE QALKULATOR_VERSION="${QALKULATOR_VERSION}")
 
-target_link_libraries(kalk PRIVATE
+target_link_libraries(qalkulator PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -59,10 +59,10 @@ target_link_libraries(kalk PRIVATE
 )
 
 if(TARGET KF6::Crash)
-    target_link_libraries(kalk PRIVATE KF6::Crash)
-    target_compile_definitions(kalk PRIVATE HAVE_KCRASH)
+    target_link_libraries(qalkulator PRIVATE KF6::Crash)
+    target_compile_definitions(qalkulator PRIVATE HAVE_KCRASH)
 endif()
 
-ecm_finalize_qml_module(kalk)
+ecm_finalize_qml_module(qalkulator)
 
-install(TARGETS kalk ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS qalkulator ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

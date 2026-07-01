@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a problem in QalKulator Calculator (beta)
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve **QalKulator Calculator**. It's **beta**, so some rough edges are expected.
+  - type: checkboxes
+    id: human
+    attributes:
+      label: Human contribution
+      options:
+        - label: I'm a person (or a human-guided agent working under my direction and review), not an automated or unguided bot.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: From Help → About.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - .deb (Debian/Ubuntu)
+        - .rpm (Fedora/RHEL)
+        - Arch package
+        - Flatpak
+        - AppImage
+        - Windows (zip or installer)
+        - Built from source
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What did you expect, and what happened instead?
+    validations:
+      required: true

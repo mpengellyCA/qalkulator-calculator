@@ -1,8 +1,10 @@
 <div align="center">
 
-# Kalk
+# QalKulator Calculator
 
 **A modern, user-centric, powerful calculator for KDE Plasma & beyond.**
+
+> ⚠️ **Beta software.** QalKulator Calculator is under active development — expect rough edges and occasional breaking changes between releases.
 
 Type naturally, watch the answer update as you go, keep every result within reach,
 and flow values straight into unit and currency conversions — all without leaving
@@ -12,15 +14,15 @@ the keyboard.
 ![Qt 6](https://img.shields.io/badge/Qt-6-41CD52?logo=qt&logoColor=white)
 ![KDE Frameworks 6](https://img.shields.io/badge/KDE%20Frameworks-6-1d99f3)
 
-<img src="screenshots/calculator.png" alt="Kalk calculator with a live tape of results" width="360">
+<img src="screenshots/calculator.png" alt="QalKulator calculator with a live tape of results" width="360">
 
 </div>
 
 ---
 
-## Why Kalk
+## Why QalKulator
 
-Kalk has the calm of a phone calculator and the power of a desktop one. It's a thin,
+QalKulator has the calm of a phone calculator and the power of a desktop one. It's a thin,
 native shell over the battle-tested [libqalculate](https://qalculate.github.io/)
 engine, so the math is correct and the app stays fast and small.
 
@@ -39,7 +41,7 @@ engine, so the math is correct and the app stays fast and small.
   speed, time, fuel economy, data rate, energy, frequency, angle), grouped and searchable.
 - **Currency conversion** — daily exchange rates with graceful offline fallback.
 - **Result flow** — send a result into a converter and the converted value back again.
-- **Unit autocomplete** — type `ft`, `feet`, or `foot` and Kalk suggests the unit and
+- **Unit autocomplete** — type `ft`, `feet`, or `foot` and QalKulator suggests the unit and
   the correct way to write it; `Ctrl+U` browses the whole list.
 - **Keyboard-first** — every action has a visible key cue, an `Alt` access-key overlay,
   and a collapsible on-screen keypad that mirrors the keyboard.
@@ -65,18 +67,30 @@ Extra CMake Modules, and CMake. On most distros these are packaged.
 ```sh
 cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build -j$(nproc)
-./build/bin/kalk
+./build/bin/qalkulator
 ```
 
 ### Flatpak
 
 ```sh
-flatpak-builder --user --install --force-clean build-flatpak io.github.mpengellyca.kalk.flatpak.yaml
+flatpak-builder --user --install --force-clean build-flatpak io.github.mpengellyca.qalkulator.flatpak.yaml
 ```
+
+## Contributing
+
+QalKulator Calculator is **beta** and contributions are welcome — from **people** and from
+**human-guided AI agents** working under a person's direction and review.
+
+Please **do not** open **automated or unguided agent** pull requests, issues, or comments
+(unattended bots, mass-generated reports, or agents acting without a responsible human).
+Such contributions will be closed. A real person must stand behind every submission,
+understand it, and be able to discuss it.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
 ## Built with
 
-Kalk was produced with the help of
+QalKulator was produced with the help of
 [Claude Code](https://www.anthropic.com/claude-code),
 [Agent Kate](https://github.com/mpengellyCA/agent-kate),
 and [Claude Opus 4.8](https://www.anthropic.com/claude).

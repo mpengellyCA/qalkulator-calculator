@@ -1,4 +1,4 @@
-# Build Kalk for Windows via MSYS2 (UCRT64) and attach a portable zip + NSIS
+# Build QalKulator for Windows via MSYS2 (UCRT64) and attach a portable zip + NSIS
 # installer to the same v<version> release created by release.yml. Independent of
 # the Linux pipeline — a Windows failure never affects the Linux release.
 name: windows
@@ -62,8 +62,8 @@ jobs:
         with:
           name: windows
           path: |
-            Kalk-*-windows-x86_64.zip
-            Kalk-*-Setup.exe
+            QalKulator-*-windows-x86_64.zip
+            QalKulator-*-Setup.exe
 
       - name: Attach to release
         uses: softprops/action-gh-release@v2
@@ -71,5 +71,5 @@ jobs:
           tag_name: v${{ steps.v.outputs.version }}
           fail_on_unmatched_files: false
           files: |
-            Kalk-*-windows-x86_64.zip
-            Kalk-*-Setup.exe
+            QalKulator-*-windows-x86_64.zip
+            QalKulator-*-Setup.exe

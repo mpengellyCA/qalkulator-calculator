@@ -1,5 +1,5 @@
-File=kalk.kcfg
-ClassName=KalkConfig
+File=qalkulator.kcfg
+ClassName=QalkulatorConfig
 NameSpace=
 Singleton=true
 Mutators=true

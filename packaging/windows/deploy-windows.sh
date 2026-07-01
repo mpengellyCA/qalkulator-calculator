@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Mike Pengelly <https://github.com/mpengellyCA>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Build, deploy and package Kalk for Windows using MSYS2 (UCRT64).
+# Build, deploy and package QalKulator for Windows using MSYS2 (UCRT64).
 # All dependencies (Qt6, KF6/Kirigami, libqalculate) are prebuilt MSYS2 packages,
 # so this mirrors the Linux jobs: cmake build → install into a stage dir →
 # gather every runtime DLL/QML module → zip (+ NSIS installer).
@@ -16,10 +16,10 @@ cd "${repo_root}"
 
 VERSION="${1:-$(./version.sh)}"
 PREFIX="/ucrt64"
-STAGE="${repo_root}/pkg-windows/Kalk"
+STAGE="${repo_root}/pkg-windows/QalKulator"
 QT_QML="${PREFIX}/share/qt6/qml"
 
-echo "==> Building Kalk ${VERSION} for Windows (MSYS2 UCRT64)"
+echo "==> Building QalKulator ${VERSION} for Windows (MSYS2 UCRT64)"
 rm -rf "${repo_root}/pkg-windows" build-windows
 mkdir -p "${STAGE}"
 
@@ -27,12 +27,12 @@ mkdir -p "${STAGE}"
 cmake -B build-windows -S . -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
-    -DKALK_VERSION="${VERSION}"
+    -DQALKULATOR_VERSION="${VERSION}"
 cmake --build build-windows
 cmake --install build-windows --prefix "${STAGE}"
 
-EXE="${STAGE}/bin/kalk.exe"
-[ -f "${EXE}" ] || { echo "!! kalk.exe not found at ${EXE}"; exit 1; }
+EXE="${STAGE}/bin/qalkulator.exe"
+[ -f "${EXE}" ] || { echo "!! qalkulator.exe not found at ${EXE}"; exit 1; }
 
 # --- 2. Qt/QML deployment (Qt DLLs, platform plugin, imported QML modules) ----
 # windeployqt scans our QML for imports and copies matching modules next to the
@@ -90,9 +90,9 @@ if [ -d "${PREFIX}/share/icons/breeze" ]; then
 fi
 
 # --- 7. Portable ZIP ---------------------------------------------------------
-ZIP="${repo_root}/Kalk-${VERSION}-windows-x86_64.zip"
+ZIP="${repo_root}/QalKulator-${VERSION}-windows-x86_64.zip"
 echo "==> Packaging portable zip"
-( cd "${repo_root}/pkg-windows" && bsdtar -a -cf "${ZIP}" Kalk )
+( cd "${repo_root}/pkg-windows" && bsdtar -a -cf "${ZIP}" QalKulator )
 echo "==> Produced: ${ZIP}"
 
 # --- 8. NSIS installer (best-effort — never fails the build) ------------------
@@ -103,7 +103,7 @@ if command -v makensis >/dev/null 2>&1; then
         -DVERSION="${VERSION}" \
         -DSTAGE="$(cygpath -w "${STAGE}")" \
         -DOUTDIR="$(cygpath -w "${repo_root}")" \
-        "$(cygpath -w "${repo_root}/packaging/windows/kalk.nsi")"; then
+        "$(cygpath -w "${repo_root}/packaging/windows/qalkulator.nsi")"; then
         echo "==> Produced installer"
     else
         echo "!! NSIS installer failed (non-fatal); portable zip still produced"
@@ -112,4 +112,4 @@ else
     echo "!! makensis not found; skipping installer"
 fi
 
-ls -lh "${repo_root}"/Kalk-*.zip "${repo_root}"/Kalk-*-Setup.exe 2>/dev/null || true
+ls -lh "${repo_root}"/QalKulator-*.zip "${repo_root}"/QalKulator-*-Setup.exe 2>/dev/null || true

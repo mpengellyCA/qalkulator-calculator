@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 
 # Full version X.Y.Z. X.Y come from the VERSION file; Z is a hex commit index
-# injected by CI (-DKALK_VERSION=...). Fall back to "<X.Y>.0-dev" for local builds.
-if(NOT KALK_VERSION)
-    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" KALK_BASE_VERSION LIMIT_COUNT 1)
-    string(STRIP "${KALK_BASE_VERSION}" KALK_BASE_VERSION)
-    set(KALK_VERSION "${KALK_BASE_VERSION}.0-dev")
+# injected by CI (-DQALKULATOR_VERSION=...). Fall back to "<X.Y>.0-dev" for local builds.
+if(NOT QALKULATOR_VERSION)
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" QALKULATOR_BASE_VERSION LIMIT_COUNT 1)
+    string(STRIP "${QALKULATOR_BASE_VERSION}" QALKULATOR_BASE_VERSION)
+    set(QALKULATOR_VERSION "${QALKULATOR_BASE_VERSION}.0-dev")
 endif()
 
-project(kalk LANGUAGES CXX)
+project(qalkulator LANGUAGES CXX)
 
 set(QT_MIN_VERSION 6.6.0)
 set(KF6_MIN_VERSION 6.0.0)
@@ -54,21 +54,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(src)
 
-install(PROGRAMS io.github.mpengellyca.kalk.desktop DESTINATION ${KDE_INSTALL_APPDIR})
-install(FILES io.github.mpengellyca.kalk.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
-install(FILES icons/io.github.mpengellyca.kalk.svg
+install(PROGRAMS io.github.mpengellyca.qalkulator.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES io.github.mpengellyca.qalkulator.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+install(FILES icons/io.github.mpengellyca.qalkulator.svg
     DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/scalable/apps)
 
 # --- Packaging (CPack: TGZ + DEB + RPM) ------------------------------------
-set(CPACK_PACKAGE_NAME "kalk")
-set(CPACK_PACKAGE_VERSION "${KALK_VERSION}")
+set(CPACK_PACKAGE_NAME "qalkulator")
+set(CPACK_PACKAGE_VERSION "${QALKULATOR_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A fast, keyboard-first calculator with unit and currency conversion")
 set(CPACK_PACKAGE_VENDOR "Mike Pengelly")
 set(CPACK_PACKAGE_CONTACT "Mike Pengelly <https://github.com/mpengellyCA>")
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/mpengellyCA/kalk-calculator")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/mpengellyCA/qalkulator-calculator")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
-set(CPACK_PACKAGE_FILE_NAME "kalk-${KALK_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_FILE_NAME "qalkulator-${QALKULATOR_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_STRIP_FILES ON)
 
 # Debian/Ubuntu (.deb): auto-detect linked-library deps; name the QML runtime
@@ -81,7 +81,7 @@ set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "qml6-module-org-kde-kirigami, qml6-module-q
 # Fedora/RHEL (.rpm): let rpmbuild auto-require the linked libraries.
 set(CPACK_RPM_PACKAGE_LICENSE "AGPL-3.0-or-later")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Productivity")
-set(CPACK_RPM_PACKAGE_URL "https://github.com/mpengellyCA/kalk-calculator")
+set(CPACK_RPM_PACKAGE_URL "https://github.com/mpengellyCA/qalkulator-calculator")
 set(CPACK_RPM_PACKAGE_AUTOREQPROV ON)
 set(CPACK_RPM_PACKAGE_REQUIRES "kf6-kirigami, qt6-qtdeclarative")
 

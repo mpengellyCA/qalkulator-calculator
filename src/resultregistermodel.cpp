@@ -3,7 +3,7 @@
 
 #include "resultregistermodel.h"
 
-#include "kalkconfig.h"
+#include "qalkulatorconfig.h"
 
 namespace
 {
@@ -126,8 +126,8 @@ void ResultRegisterModel::remove(int row)
 
 void ResultRegisterModel::restore()
 {
-    const QStringList serialized = KalkConfig::self()->history();
-    int cap = KalkConfig::self()->persistHistoryCount();
+    const QStringList serialized = QalkulatorConfig::self()->history();
+    int cap = QalkulatorConfig::self()->persistHistoryCount();
     if (cap < 0) {
         cap = 0;
     }
@@ -159,7 +159,7 @@ void ResultRegisterModel::restore()
 
 void ResultRegisterModel::persist()
 {
-    int cap = KalkConfig::self()->persistHistoryCount();
+    int cap = QalkulatorConfig::self()->persistHistoryCount();
     if (cap < 0) {
         cap = 0;
     }
@@ -181,5 +181,5 @@ void ResultRegisterModel::persist()
         serialized.append(clean(e.expression) + kFieldSep + clean(e.value) + kFieldSep + clean(e.context));
     }
     // main.cpp owns the actual KConfig::save() on quit.
-    KalkConfig::self()->setHistory(serialized);
+    QalkulatorConfig::self()->setHistory(serialized);
 }

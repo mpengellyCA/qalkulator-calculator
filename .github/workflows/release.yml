@@ -1,4 +1,4 @@
-# Build Kalk for every Linux packaging format and publish a GitHub release on
+# Build QalKulator for every Linux packaging format and publish a GitHub release on
 # each push to main. Version = <X.Y from VERSION> . <hex(commit_count-1)>, so every
 # commit on main gets a unique tag (e.g. v0.1.1, v0.1.a, v0.1.10). See version.sh.
 name: release
@@ -31,7 +31,7 @@ jobs:
           version="$(./version.sh)"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=v${version}"    >> "$GITHUB_OUTPUT"
-          echo "Kalk version: ${version} (tag v${version})"
+          echo "QalKulator version: ${version} (tag v${version})"
 
   # --- Debian/Ubuntu .deb + raw .tar.gz (Debian trixie: Qt6.8 + KF6) ---------
   deb-tgz:
@@ -52,7 +52,7 @@ jobs:
         run: |
           cmake -B build -S . -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DKALK_VERSION="${{ needs.version.outputs.version }}"
+            -DQALKULATOR_VERSION="${{ needs.version.outputs.version }}"
           cmake --build build
       - name: Package (TGZ + DEB)
         working-directory: build
@@ -85,7 +85,7 @@ jobs:
         run: |
           cmake -B build -S . -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DKALK_VERSION="${{ needs.version.outputs.version }}"
+            -DQALKULATOR_VERSION="${{ needs.version.outputs.version }}"
           cmake --build build
       - name: Package (RPM)
         working-directory: build
@@ -124,11 +124,11 @@ jobs:
           git config --global --add safe.directory "$PWD"
           mkdir -p arch-build
           # Local source tarball matching GitHub's tag-tarball layout.
-          git archive --format=tar.gz --prefix="kalk-calculator-${VERSION}/" HEAD \
-            -o "arch-build/kalk-${VERSION}.tar.gz"
+          git archive --format=tar.gz --prefix="qalkulator-calculator-${VERSION}/" HEAD \
+            -o "arch-build/qalkulator-${VERSION}.tar.gz"
           # CI PKGBUILD: pin version, source from the local tarball, skip integ.
           sed -e "s/^pkgver=.*/pkgver=${VERSION}/" \
-              -e "s#^source=.*#source=(\"kalk-${VERSION}.tar.gz\")#" \
+              -e "s#^source=.*#source=(\"qalkulator-${VERSION}.tar.gz\")#" \
               packaging/arch/PKGBUILD > arch-build/PKGBUILD
           # Release-facing PKGBUILD: keep the tag-tarball source, just pin version.
           sed "s/^pkgver=.*/pkgver=${VERSION}/" packaging/arch/PKGBUILD > "arch-build/PKGBUILD.release"
@@ -193,12 +193,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Inject version into manifest
         run: |
-          sed -i "/- -DCMAKE_BUILD_TYPE=RelWithDebInfo/a\\      - -DKALK_VERSION=${{ needs.version.outputs.version }}" \
-            io.github.mpengellyca.kalk.flatpak.yaml
+          sed -i "/- -DCMAKE_BUILD_TYPE=RelWithDebInfo/a\\      - -DQALKULATOR_VERSION=${{ needs.version.outputs.version }}" \
+            io.github.mpengellyca.qalkulator.flatpak.yaml
       - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: io.github.mpengellyca.kalk-${{ needs.version.outputs.version }}.flatpak
-          manifest-path: io.github.mpengellyca.kalk.flatpak.yaml
+          bundle: io.github.mpengellyca.qalkulator-${{ needs.version.outputs.version }}.flatpak
+          manifest-path: io.github.mpengellyca.qalkulator.flatpak.yaml
           cache-key: flatpak-builder-${{ github.sha }}
       - uses: actions/upload-artifact@v4
         with:
@@ -222,16 +222,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
-          name: Kalk ${{ needs.version.outputs.version }}
+          name: QalKulator ${{ needs.version.outputs.version }}
           fail_on_unmatched_files: false
           files: dist/*
           body: |
-            **Kalk ${{ needs.version.outputs.version }}** — a fast, keyboard-first calculator with unit and currency conversion.
+            **QalKulator ${{ needs.version.outputs.version }}** — a fast, keyboard-first calculator with unit and currency conversion.
 
             ### Install
-            - **Debian/Ubuntu:** `sudo apt install ./kalk-*.deb`
-            - **Fedora/RHEL:** `sudo dnf install ./kalk-*.rpm`
-            - **Arch:** `sudo pacman -U kalk-*.pkg.tar.zst` (or build with the bundled `PKGBUILD`)
-            - **Flatpak:** `flatpak install --user ./io.github.mpengellyca.kalk-*.flatpak`
-            - **AppImage:** `chmod +x Kalk-*.AppImage && ./Kalk-*.AppImage`
-            - **Portable:** extract `kalk-*.tar.gz` under `/usr`
+            - **Debian/Ubuntu:** `sudo apt install ./qalkulator-*.deb`
+            - **Fedora/RHEL:** `sudo dnf install ./qalkulator-*.rpm`
+            - **Arch:** `sudo pacman -U qalkulator-*.pkg.tar.zst` (or build with the bundled `PKGBUILD`)
+            - **Flatpak:** `flatpak install --user ./io.github.mpengellyca.qalkulator-*.flatpak`
+            - **AppImage:** `chmod +x QalKulator-*.AppImage && ./QalKulator-*.AppImage`
+            - **Portable:** extract `qalkulator-*.tar.gz` under `/usr`

@@ -12,12 +12,12 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
-import io.github.mpengellyca.kalk
+import io.github.mpengellyca.qalkulator
 
 Kirigami.ApplicationWindow {
     id: appWindow
 
-    title: i18nc("@title:window", "Kalk")
+    title: i18nc("@title:window", "QalKulator")
 
     minimumWidth: Kirigami.Units.gridUnit * 20   // ~360 px
     minimumHeight: Kirigami.Units.gridUnit * 26  // ~480 px

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Mike Pengelly <https://github.com/mpengellyCA>
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Kalk — a modern, keyboard-first calculator for KDE Plasma.
+// QalKulator — a modern, keyboard-first calculator for KDE Plasma.
 // Bootstrap: creates the single libqalculate CALCULATOR, wires the thin C++
 // services, registers them as QML singletons, and loads the QML UI.
 
@@ -27,11 +27,11 @@
 
 #include "calculatorengine.h"
 #include "currencyservice.h"
-#include "kalkconfig.h"
+#include "qalkulatorconfig.h"
 #include "resultregistermodel.h"
 
-#ifndef KALK_VERSION
-#define KALK_VERSION "0.1.0-dev"
+#ifndef QALKULATOR_VERSION
+#define QALKULATOR_VERSION "0.1.0-dev"
 #endif
 
 namespace
@@ -65,12 +65,12 @@ int main(int argc, char *argv[])
         QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
     }
 
-    KLocalizedString::setApplicationDomain(QByteArrayLiteral("kalk"));
+    KLocalizedString::setApplicationDomain(QByteArrayLiteral("qalkulator"));
 
     KAboutData aboutData(
-        QStringLiteral("kalk"),
-        i18nc("@title", "Kalk"),
-        QStringLiteral(KALK_VERSION),
+        QStringLiteral("qalkulator"),
+        i18nc("@title", "QalKulator"),
+        QStringLiteral(QALKULATOR_VERSION),
         i18n("A fast, keyboard-first calculator for the desktop."),
         KAboutLicense::Custom,
         i18n("© 2026 Mike Pengelly"));
@@ -79,14 +79,14 @@ int main(int argc, char *argv[])
                         i18nc("@info:credit", "Author"),
                         QString(),
                         QStringLiteral("https://github.com/mpengellyCA"));
-    aboutData.setHomepage(QStringLiteral("https://github.com/mpengellyCA/kalk-calculator"));
-    aboutData.setDesktopFileName(QStringLiteral("io.github.mpengellyca.kalk"));
-    aboutData.setBugAddress(QByteArrayLiteral("https://github.com/mpengellyCA/kalk-calculator/issues"));
+    aboutData.setHomepage(QStringLiteral("https://github.com/mpengellyCA/qalkulator-calculator"));
+    aboutData.setDesktopFileName(QStringLiteral("io.github.mpengellyca.qalkulator"));
+    aboutData.setBugAddress(QByteArrayLiteral("https://github.com/mpengellyCA/qalkulator-calculator/issues"));
     KAboutData::setApplicationData(aboutData);
 
-    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("io.github.mpengellyca.kalk")));
-    app.setApplicationName(QStringLiteral("kalk"));
-    app.setDesktopFileName(QStringLiteral("io.github.mpengellyca.kalk"));
+    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("io.github.mpengellyca.qalkulator")));
+    app.setApplicationName(QStringLiteral("qalkulator"));
+    app.setDesktopFileName(QStringLiteral("io.github.mpengellyca.qalkulator"));
 
 #ifdef HAVE_KCRASH
     KCrash::initialize();
@@ -98,10 +98,10 @@ int main(int argc, char *argv[])
     CALCULATOR->loadGlobalDefinitions();
     CALCULATOR->loadLocalDefinitions();
 
-    // Optional engine smoke check (opt-in via KALK_ENGINE_SPIKE) — off by default
+    // Optional engine smoke check (opt-in via QK_ENGINE_SPIKE) — off by default
     // so it never adds synchronous evaluation to normal startup.
-    if (!qEnvironmentVariableIsEmpty("KALK_ENGINE_SPIKE")) {
-        qInfo() << "Kalk engine spike:"
+    if (!qEnvironmentVariableIsEmpty("QK_ENGINE_SPIKE")) {
+        qInfo() << "QalKulator engine spike:"
                 << "2+2 =" << QString::fromStdString(CALCULATOR->calculateAndPrint("2+2", 2000))
                 << "| 200 + 15% =" << QString::fromStdString(CALCULATOR->calculateAndPrint("200 + 15%", 2000))
                 << "| 100 USD to EUR =" << QString::fromStdString(CALCULATOR->calculateAndPrint("100 USD to EUR", 2000));
@@ -119,56 +119,56 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine qmlEngine;
     KLocalization::setupLocalizedContext(&qmlEngine);
 
-    qmlRegisterSingletonInstance("io.github.mpengellyca.kalk", 1, 0, "Engine", engine);
-    qmlRegisterSingletonInstance("io.github.mpengellyca.kalk", 1, 0, "Register", registerModel);
-    qmlRegisterSingletonInstance("io.github.mpengellyca.kalk", 1, 0, "Currency", currency);
-    qmlRegisterSingletonInstance("io.github.mpengellyca.kalk", 1, 0, "Config", KalkConfig::self());
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Engine", engine);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Register", registerModel);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Currency", currency);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Config", QalkulatorConfig::self());
 
     // These instances are C++-owned (parented to the app / KConfigXT); make that
     // explicit so the QML engine never garbage-collects them.
-    for (QObject *o : {static_cast<QObject *>(engine), static_cast<QObject *>(registerModel), static_cast<QObject *>(currency), static_cast<QObject *>(KalkConfig::self())}) {
+    for (QObject *o : {static_cast<QObject *>(engine), static_cast<QObject *>(registerModel), static_cast<QObject *>(currency), static_cast<QObject *>(QalkulatorConfig::self())}) {
         QQmlEngine::setObjectOwnership(o, QQmlEngine::CppOwnership);
     }
 
     // Result-format / precision / angle-unit changes must refresh the live result
     // immediately (the Settings dialog only writes Config).
-    const QList<void (KalkConfig::*)()> formatSignals = {
-        &KalkConfig::resultFormatChanged,
-        &KalkConfig::decimalPlacesChanged,
-        &KalkConfig::thousandsSeparatorChanged,
-        &KalkConfig::angleUnitChanged,
+    const QList<void (QalkulatorConfig::*)()> formatSignals = {
+        &QalkulatorConfig::resultFormatChanged,
+        &QalkulatorConfig::decimalPlacesChanged,
+        &QalkulatorConfig::thousandsSeparatorChanged,
+        &QalkulatorConfig::angleUnitChanged,
     };
     for (auto sig : formatSignals) {
-        QObject::connect(KalkConfig::self(), sig, engine, &CalculatorEngine::refreshFormatting);
+        QObject::connect(QalkulatorConfig::self(), sig, engine, &CalculatorEngine::refreshFormatting);
     }
 
     QObject::connect(&app, &QApplication::aboutToQuit, registerModel, &ResultRegisterModel::persist);
-    QObject::connect(&app, &QApplication::aboutToQuit, []() { KalkConfig::self()->save(); });
+    QObject::connect(&app, &QApplication::aboutToQuit, []() { QalkulatorConfig::self()->save(); });
 
-    qmlEngine.loadFromModule("io.github.mpengellyca.kalk", "Main");
+    qmlEngine.loadFromModule("io.github.mpengellyca.qalkulator", "Main");
     if (qmlEngine.rootObjects().isEmpty()) {
         return -1;
     }
 
-    // Dev-only headless screenshot hook: KALK_SCREENSHOT=/path.png [KALK_SCREENSHOT_SIZE=WxH]
+    // Dev-only headless screenshot hook: QK_SCREENSHOT=/path.png [QK_SCREENSHOT_SIZE=WxH]
     // renders the window (software backend + offscreen) and quits. No effect on
     // normal runs.
-    const QByteArray shotPath = qgetenv("KALK_SCREENSHOT");
+    const QByteArray shotPath = qgetenv("QK_SCREENSHOT");
     if (!shotPath.isEmpty()) {
         if (auto *win = qobject_cast<QQuickWindow *>(qmlEngine.rootObjects().constFirst())) {
             int w = 440, h = 780;
-            const QList<QByteArray> sz = qgetenv("KALK_SCREENSHOT_SIZE").split('x');
+            const QList<QByteArray> sz = qgetenv("QK_SCREENSHOT_SIZE").split('x');
             if (sz.size() == 2) {
                 w = sz.at(0).toInt();
                 h = sz.at(1).toInt();
             }
             win->resize(w, h);
             bool okMode = false;
-            const int startMode = qEnvironmentVariableIntValue("KALK_START_MODE", &okMode);
+            const int startMode = qEnvironmentVariableIntValue("QK_START_MODE", &okMode);
             if (okMode && startMode >= 0 && startMode <= 2) {
                 win->setProperty("mode", startMode);
             }
-            if (!qEnvironmentVariableIsEmpty("KALK_DEMO")) {
+            if (!qEnvironmentVariableIsEmpty("QK_DEMO")) {
                 if (okMode && startMode >= 1) {
                     // Seed the active converter's amount so the shot shows a live result.
                     QVariant convVar;

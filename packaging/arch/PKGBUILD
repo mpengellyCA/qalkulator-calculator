@@ -1,23 +1,23 @@
 # Maintainer: Mike Pengelly <https://github.com/mpengellyCA>
-pkgname=kalk
+pkgname=qalkulator
 pkgver=0.1.0
 pkgrel=1
 pkgdesc="A fast, keyboard-first calculator with unit and currency conversion"
 arch=('x86_64')
-url="https://github.com/mpengellyCA/kalk-calculator"
+url="https://github.com/mpengellyCA/qalkulator-calculator"
 license=('AGPL-3.0-or-later')
 depends=('libqalculate' 'kirigami' 'kcoreaddons' 'kconfig' 'ki18n'
          'qt6-base' 'qt6-declarative' 'qqc2-desktop-style')
 makedepends=('cmake' 'extra-cmake-modules' 'qt6-tools')
 options=('!debug')   # no separate -debug split package
-source=("$pkgname-$pkgver.tar.gz::https://github.com/mpengellyCA/kalk-calculator/archive/refs/tags/v$pkgver.tar.gz")
+source=("$pkgname-$pkgver.tar.gz::https://github.com/mpengellyCA/qalkulator-calculator/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 build() {
-    cmake -B build -S "kalk-calculator-$pkgver" \
+    cmake -B build -S "qalkulator-calculator-$pkgver" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DKALK_VERSION="$pkgver"
+        -DQALKULATOR_VERSION="$pkgver"
     cmake --build build
 }
 

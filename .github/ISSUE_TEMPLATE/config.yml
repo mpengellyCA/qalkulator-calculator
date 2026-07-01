@@ -1,0 +1,7 @@
+blank_issues_enabled: false
+contact_links:
+  - name: QalKulator Calculator is beta — please read first
+    url: https://github.com/mpengellyCA/qalkulator-calculator/blob/main/CONTRIBUTING.md
+    about: >-
+      Contributions are welcome from people and human-guided agents. Automated or
+      unguided agent issues/PRs will be closed. See the contributing guide.

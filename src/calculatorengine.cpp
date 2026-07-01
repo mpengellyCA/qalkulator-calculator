@@ -3,7 +3,7 @@
 
 #include "calculatorengine.h"
 
-#include "kalkconfig.h"
+#include "qalkulatorconfig.h"
 #include "resultregistermodel.h"
 
 #include <QClipboard>
@@ -35,7 +35,7 @@ QString normalizeExpression(const QString &expr)
     return out;
 }
 
-// Build PrintOptions from the current KalkConfig (resultFormat / decimalPlaces /
+// Build PrintOptions from the current QalkulatorConfig (resultFormat / decimalPlaces /
 // thousandsSeparator).
 PrintOptions makePrintOptions()
 {
@@ -47,7 +47,7 @@ PrintOptions makePrintOptions()
     // 1.4142136) rather than leaking interval arithmetic as "interval(...)".
     po.interval_display = INTERVAL_DISPLAY_SIGNIFICANT_DIGITS;
 
-    const int format = KalkConfig::self()->resultFormat();
+    const int format = QalkulatorConfig::self()->resultFormat();
     switch (format) {
     case 1: // scientific
         po.min_exp = EXP_SCIENTIFIC;
@@ -63,7 +63,7 @@ PrintOptions makePrintOptions()
         break;
     }
 
-    const int decimals = KalkConfig::self()->decimalPlaces();
+    const int decimals = QalkulatorConfig::self()->decimalPlaces();
     if (decimals >= 0) {
         po.use_max_decimals = true;
         po.max_decimals = decimals;
@@ -77,18 +77,18 @@ PrintOptions makePrintOptions()
         po.min_decimals = 0;
     }
 
-    po.digit_grouping = KalkConfig::self()->thousandsSeparator() ? DIGIT_GROUPING_STANDARD : DIGIT_GROUPING_NONE;
+    po.digit_grouping = QalkulatorConfig::self()->thousandsSeparator() ? DIGIT_GROUPING_STANDARD : DIGIT_GROUPING_NONE;
 
     return po;
 }
 
-// Build EvaluationOptions from the current KalkConfig (angleUnit).
+// Build EvaluationOptions from the current QalkulatorConfig (angleUnit).
 EvaluationOptions makeEvalOptions()
 {
     EvaluationOptions eo;
     eo.approximation = APPROXIMATION_TRY_EXACT;
     eo.parse_options.angle_unit = [] {
-        switch (KalkConfig::self()->angleUnit()) {
+        switch (QalkulatorConfig::self()->angleUnit()) {
         case 1:
             return ANGLE_UNIT_RADIANS;
         case 2:
@@ -239,7 +239,7 @@ CalculatorEngine::CalculatorEngine(ResultRegisterModel *registerModel, QObject *
     qRegisterMetaType<quint64>("quint64");
 
     m_thread = new QThread(this);
-    m_thread->setObjectName(QStringLiteral("KalkCalcWorker"));
+    m_thread->setObjectName(QStringLiteral("QalKulatorCalcWorker"));
     m_worker = new CalcWorker(&m_calcMutex);
     m_worker->moveToThread(m_thread);
 

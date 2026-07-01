@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea for QalKulator Calculator
+labels: [enhancement]
+body:
+  - type: checkboxes
+    id: human
+    attributes:
+      label: Human contribution
+      options:
+        - label: I'm a person (or a human-guided agent working under my direction and review), not an automated or unguided bot.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
