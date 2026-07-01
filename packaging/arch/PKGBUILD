@@ -9,6 +9,7 @@ license=('AGPL-3.0-or-later')
 depends=('libqalculate' 'kirigami' 'kcoreaddons' 'kconfig' 'ki18n'
          'qt6-base' 'qt6-declarative' 'qqc2-desktop-style')
 makedepends=('cmake' 'extra-cmake-modules' 'qt6-tools')
+options=('!debug')   # no separate -debug split package
 source=("$pkgname-$pkgver.tar.gz::https://github.com/mpengellyCA/kalk-calculator/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 
