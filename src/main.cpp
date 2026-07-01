@@ -14,6 +14,10 @@
 #include <QQuickWindow>
 #include <QTimer>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 #include <KAboutData>
 #include <KLocalizedContext>
 #include <KLocalizedString>
@@ -54,8 +58,15 @@ void messageFilter(QtMsgType type, const QMessageLogContext &context, const QStr
         // qInstallMessageHandler() returns nullptr when it replaced Qt's built-in
         // default, so forwarding only "if previous" would swallow ALL output —
         // which on Windows hid QML load failures entirely (the app just exited
-        // -1 with no message). Emit the formatted line to stderr instead.
-        fprintf(stderr, "%s\n", qUtf8Printable(qFormatLogMessage(type, context, message)));
+        // -1 with no message). Emit the formatted line ourselves.
+        const QString formatted = qFormatLogMessage(type, context, message);
+#ifdef Q_OS_WIN
+        // A GUI-subsystem app has no console, so stderr is usually unconnected;
+        // the debugger channel is where Qt's own default handler writes (visible
+        // in DebugView, or Wine's +debugstr).
+        OutputDebugStringW(reinterpret_cast<const wchar_t *>((formatted + QLatin1Char('\n')).utf16()));
+#endif
+        fprintf(stderr, "%s\n", qUtf8Printable(formatted));
         fflush(stderr);
     }
 }
