@@ -38,11 +38,15 @@ EXE="${STAGE}/bin/qalkulator.exe"
 # windeployqt scans our QML for imports and copies matching modules next to the
 # exe (QtQuick, org.kde.kirigami, …). It does NOT catch the org.kde.desktop
 # style (loaded by string at runtime) — handled below.
-echo "== deploy-tool availability =="
-for _t in windeployqt6 qmlimportscanner qmlimportscanner6 lconvert lrelease qtpaths6 qmake6; do
-    echo "   ${_t}: $(command -v "${_t}" 2>/dev/null || echo MISSING)"
-done
-windeployqt6 --release --verbose 2 --no-translations --qmldir "${repo_root}/src/qml" "${EXE}"
+# MSYS2 ships qmlimportscanner under share/qt6/bin, not bin/, so windeployqt's
+# --qmldir scan can't launch it ("Process failed to start"). Put it where
+# windeployqt looks, and add that dir to PATH as a backstop.
+export PATH="${PREFIX}/share/qt6/bin:${PATH}"
+if [ ! -e "${PREFIX}/bin/qmlimportscanner.exe" ]; then
+    _qis="$(command -v qmlimportscanner 2>/dev/null || find "${PREFIX}" -name 'qmlimportscanner.exe' 2>/dev/null | head -1)"
+    [ -n "${_qis}" ] && cp "${_qis}" "${PREFIX}/bin/qmlimportscanner.exe" && echo "==> qmlimportscanner -> ${PREFIX}/bin (from ${_qis})"
+fi
+windeployqt6 --release --no-translations --qmldir "${repo_root}/src/qml" "${EXE}"
 
 # --- 3. Hand-bundle the runtime-loaded org.kde.desktop QQC2 style + Kirigami --
 for mod in org/kde/desktop org/kde/kirigami; do
