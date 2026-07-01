@@ -105,6 +105,21 @@ if [ -d "${PREFIX}/share/qalculate" ]; then
     cp -r "${PREFIX}/share/qalculate" "${STAGE}/share/qalculate"
 fi
 
+# --- 5b. CA certificates -----------------------------------------------------
+# libqalculate fetches exchange rates over HTTPS (ECB, floatrates, jsdelivr, …)
+# via libcurl/OpenSSL. A portable app has no system trust store, so every fetch
+# fails cert verification and the "updated" date is stuck at the shipped snapshot.
+# Bundle the CA bundle; main.cpp points CURL_CA_BUNDLE/SSL_CERT_FILE at it.
+_ca="$(find "${PREFIX}" -name 'ca-bundle.crt' 2>/dev/null | head -1)"
+[ -z "${_ca}" ] && _ca="$(find "${PREFIX}" \( -name 'ca-bundle.crt' -o -name 'cert.pem' \) -path '*ssl*' 2>/dev/null | head -1)"
+if [ -n "${_ca}" ]; then
+    echo "==> Bundling CA certificates (${_ca})"
+    mkdir -p "${STAGE}/bin/ssl/certs"
+    cp "${_ca}" "${STAGE}/bin/ssl/certs/ca-bundle.crt"
+else
+    echo "!! CA bundle not found — currency rate fetch will fail on Windows"
+fi
+
 # --- 6. Breeze icon theme (Kirigami / QQC2 icon.name) ------------------------
 # MSYS2 builds breeze-icons with BINARY_ICONS_RESOURCE=ON + SKIP_INSTALL_ICONS=ON:
 # there are NO loose SVGs, just a compiled Qt resource (breeze-icons.rcc). Without

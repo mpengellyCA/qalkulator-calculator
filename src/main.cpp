@@ -6,6 +6,7 @@
 // services, registers them as QML singletons, and loads the QML UI.
 
 #include <QApplication>
+#include <QDir>
 #include <QFile>
 #include <QIcon>
 #include <QQmlApplicationEngine>
@@ -103,6 +104,21 @@ int main(int argc, char *argv[])
             QIcon::setThemeName(QStringLiteral("breeze"));
         }
         QIcon::setFallbackThemeName(QStringLiteral("breeze"));
+    }
+
+    // libqalculate fetches exchange rates from HTTPS sources (ECB, floatrates,
+    // …) via libcurl/OpenSSL, which have no system trust store to fall back on
+    // in a portable app — so every fetch fails cert verification and the
+    // "updated" date is stuck at the shipped snapshot. Point them at the CA
+    // bundle the deploy ships next to the exe.
+    {
+        const QString ca = QDir::toNativeSeparators(
+            QCoreApplication::applicationDirPath()
+            + QStringLiteral("/ssl/certs/ca-bundle.crt"));
+        if (QFile::exists(ca)) {
+            qputenv("CURL_CA_BUNDLE", ca.toLocal8Bit());
+            qputenv("SSL_CERT_FILE", ca.toLocal8Bit());
+        }
     }
 #endif
 

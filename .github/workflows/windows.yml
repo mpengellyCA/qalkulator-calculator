@@ -53,6 +53,7 @@ jobs:
             mingw-w64-ucrt-x86_64-qqc2-desktop-style
             mingw-w64-ucrt-x86_64-sonnet
             mingw-w64-ucrt-x86_64-libqalculate
+            mingw-w64-ucrt-x86_64-ca-certificates
             mingw-w64-ucrt-x86_64-nsis
 
       - name: Build + deploy + package
