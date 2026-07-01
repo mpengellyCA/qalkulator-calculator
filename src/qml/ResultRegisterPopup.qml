@@ -88,19 +88,21 @@ QQC2.Popup {
             color: Kirigami.Theme.disabledTextColor
         }
 
-        ListView {
-            id: listView
+        QQC2.ScrollView {
+            // Like the units popover: the ScrollView reserves space for the
+            // scrollbar so it never overlaps the right-aligned values.
             visible: Register.count > 0
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(contentHeight,
+            Layout.preferredHeight: Math.min(listView.contentHeight,
                                              Kirigami.Units.gridUnit * 12)
             clip: true
+
+        ListView {
+            id: listView
             focus: true
             model: Register
             keyNavigationEnabled: true
             highlightMoveDuration: 0
-
-            QQC2.ScrollBar.vertical: QQC2.ScrollBar { }
 
             highlight: Rectangle {
                 color: Qt.rgba(Kirigami.Theme.highlightColor.r,
@@ -174,6 +176,7 @@ QQC2.Popup {
                     event.accepted = true;
                 }
             }
+        }
         }
 
         Kirigami.Separator { Layout.fillWidth: true }

@@ -46,7 +46,7 @@ Item {
         onCountChanged: Qt.callLater(list.positionViewAtEnd)
         Component.onCompleted: Qt.callLater(list.positionViewAtEnd)
 
-        QQC2.ScrollBar.vertical: QQC2.ScrollBar { policy: QQC2.ScrollBar.AsNeeded }
+        QQC2.ScrollBar.vertical: QQC2.ScrollBar { id: tapeScrollBar; policy: QQC2.ScrollBar.AsNeeded }
 
         delegate: QQC2.ItemDelegate {
             id: rowDelegate
@@ -58,6 +58,10 @@ Item {
 
             hoverEnabled: true
             padding: Kirigami.Units.smallSpacing
+            // Reserve the scrollbar's width when it's shown so the right-aligned
+            // value is never overlapped by it.
+            rightPadding: Kirigami.Units.smallSpacing
+                        + (tapeScrollBar.visible ? tapeScrollBar.width : 0)
 
             background: Rectangle {
                 color: rowDelegate.hovered
