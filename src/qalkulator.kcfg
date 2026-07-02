@@ -29,6 +29,10 @@
       <label>Last-used converter mode: 0=units, 1=currency. Target of Ctrl+Right.</label>
       <default>1</default>
     </entry>
+    <entry name="defaultCurrency" type="String">
+      <label>Default currency ($, bare currency, unspecified conversion target). Empty = follow the system locale.</label>
+      <default></default>
+    </entry>
     <entry name="fromCurrency" type="String">
       <label>Remembered source currency.</label>
       <default>USD</default>

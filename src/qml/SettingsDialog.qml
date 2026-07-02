@@ -88,6 +88,30 @@ Kirigami.Dialog {
             }
         }
 
+        // Default currency: what "$", a bare currency amount, and an unspecified
+        // conversion target resolve to. First entry follows the system locale;
+        // the rest are currency codes -> Currency.setDefaultCurrency.
+        QQC2.ComboBox {
+            Kirigami.FormData.label: i18nc("@label:listbox", "Default currency:")
+            model: [
+                Currency.localeCurrency.length > 0
+                    ? i18nc("@item:inlistbox default currency", "System default (%1)", Currency.localeCurrency)
+                    : i18nc("@item:inlistbox default currency", "System default")
+            ].concat(Currency.currencies)
+            currentIndex: {
+                const d = Currency.defaultCurrency;
+                if (d.length === 0)
+                    return 0;
+                const i = Currency.currencies.indexOf(d);
+                return i >= 0 ? i + 1 : 0;
+            }
+            onActivated: function (index) {
+                Currency.setDefaultCurrency(index === 0 ? "" : Currency.currencies[index - 1]);
+            }
+            QQC2.ToolTip.text: i18nc("@info:tooltip", "What \"$\", a bare currency amount, and unspecified conversions resolve to.")
+            QQC2.ToolTip.visible: hovered
+        }
+
         Kirigami.Separator { Kirigami.FormData.isSection: true }
 
         // Persisted history count.
