@@ -5,6 +5,8 @@
 
 #include "calcinstance.h"
 
+#include <QGuiApplication>
+#include <QPalette>
 #include <QRandomGenerator>
 
 #include <cmath>
@@ -38,7 +40,10 @@ int WindowManager::orderOf(CalcInstance *inst) const
 CalcInstance *WindowManager::createPrimary()
 {
     auto *inst = new CalcInstance(m_nextId++, /*primary=*/true, this);
-    // No accent → the window follows the OS accent.
+    // The primary window keeps the OS accent (its theme is NOT overridden), but we
+    // still record that accent — the real KDE highlight from the palette — so the
+    // cross-window results popover can tint the primary's history correctly.
+    inst->setAccentColor(QGuiApplication::palette().color(QPalette::Highlight));
     m_instances.append(inst);
     Q_EMIT instancesChanged();
     return inst;

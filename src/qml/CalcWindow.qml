@@ -85,15 +85,9 @@ Kirigami.ApplicationWindow {
         else
             Qt.callLater(activeConverter().focusAmount);
     }
-    Component.onCompleted: {
-        // Record the primary's OS accent on its instance so the cross-window
-        // results popover can tint the primary's history correctly even when
-        // browsed from a secondary window (this does NOT trigger the override
-        // binding above, which is gated on !primary).
-        if (inst && inst.primary)
-            inst.accentColor = page.Kirigami.Theme.highlightColor;
-        focusExpression();
-    }
+    // (The primary's accent for the cross-window popover is recorded in C++ from
+    // the real KDE palette highlight — see WindowManager::createPrimary.)
+    Component.onCompleted: focusExpression()
 
     // --- Global shortcuts (§7) -------------------------------------------
     // Mode switching — Ctrl+1/2/3 (shown on the tab keycaps).
