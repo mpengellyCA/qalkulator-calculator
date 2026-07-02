@@ -14,7 +14,9 @@ the keyboard.
 ![Qt 6](https://img.shields.io/badge/Qt-6-41CD52?logo=qt&logoColor=white)
 ![KDE Frameworks 6](https://img.shields.io/badge/KDE%20Frameworks-6-1d99f3)
 
-<img src="screenshots/calculator.png" alt="QalKulator calculator with a live tape of results" width="360">
+<img src="screenshots/demo.gif" alt="QalKulator in action: calculating with a live tape, recalling past results, and converting units and currency" width="380">
+
+<sub>Calculate as you type · recall any result · convert units &amp; currency — all keyboard-first.</sub>
 
 </div>
 
@@ -47,6 +49,35 @@ engine, so the math is correct and the app stays fast and small.
   and a collapsible on-screen keypad that mirrors the keyboard.
 - **Native theming** — follows your Breeze light/dark colour scheme automatically.
 
+## A closer look
+
+<table>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src="screenshots/results-dropdown.png" alt="Recent-results dropdown in the calculator" width="92%"><br>
+      <b>Recall anything</b><br>
+      <sub><code>Ctrl+↓</code> reopens every past result — insert it, or send it straight to a converter.</sub>
+    </td>
+    <td width="50%" valign="top" align="center">
+      <img src="screenshots/unit-picker.png" alt="Searchable unit browser" width="92%"><br>
+      <b>Browse every unit</b><br>
+      <sub><code>Ctrl+U</code> opens a searchable list grouped by category, with the right way to write each.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src="screenshots/amount-history.png" alt="Compatible recent results offered inside a converter" width="92%"><br>
+      <b>Flow results onward</b><br>
+      <sub>Converters offer your recent, <i>compatible</i> results — reuse a number without retyping it.</sub>
+    </td>
+    <td width="50%" valign="top" align="center">
+      <img src="screenshots/settings.png" alt="Settings dialog" width="92%"><br>
+      <b>Tune the details</b><br>
+      <sub>Result format, precision, digit grouping and angle unit — sensible defaults, yours to change.</sub>
+    </td>
+  </tr>
+</table>
+
 ## Keyboard
 
 | Key | Action |
@@ -58,6 +89,8 @@ engine, so the math is correct and the app stays fast and small.
 | `Ctrl+U` | Browse & insert a unit |
 | `Ctrl+→` / `Ctrl+←` | Send a result to the converter / send it back |
 | `Ctrl+S` · `Ctrl+K` · `Ctrl+C` | Swap from/to · toggle keypad · copy result |
+| `Alt` | Reveal the access-key overlay (then `Alt+C` / `Alt+U` / `Alt+R` jump to a mode) |
+| `Ctrl+,` | Open settings |
 
 ## Build
 
