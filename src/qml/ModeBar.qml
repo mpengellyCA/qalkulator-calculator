@@ -4,8 +4,7 @@
 // ModeBar — the quiet three-segment control that switches the whole screen
 // between Calculator / Units / Currency (§6, §9.1). Equal-width segments, an
 // accent underline + accent label on the active one, and each segment's ⌃1/⌃2/⌃3
-// keycap. The access-key letter (C, U, r) is underlined only while Alt is held
-// (progressive disclosure, §8 rule 3).
+// keycap.
 
 import QtQuick
 import QtQuick.Layouts
@@ -16,26 +15,16 @@ Item {
     id: root
 
     property int currentIndex: 0
-    property bool altHeld: false
 
     signal modeSelected(int index)
 
     implicitHeight: Kirigami.Units.gridUnit * 2.6
 
     readonly property var segments: [
-        { text: i18nc("@title mode tab", "Calculator"), letter: "C", keycap: "⌃1" },
-        { text: i18nc("@title mode tab", "Units"),      letter: "U", keycap: "⌃2" },
-        { text: i18nc("@title mode tab", "Currency"),   letter: "r", keycap: "⌃3" }
+        { text: i18nc("@title mode tab", "Calculator"), keycap: "⌃1" },
+        { text: i18nc("@title mode tab", "Units"),      keycap: "⌃2" },
+        { text: i18nc("@title mode tab", "Currency"),   keycap: "⌃3" }
     ]
-
-    function labelMarkup(text, letter) {
-        if (!root.altHeld)
-            return text;
-        var idx = text.indexOf(letter);
-        if (idx < 0)
-            return text;
-        return text.substring(0, idx) + "<u>" + text.substring(idx, idx + 1) + "</u>" + text.substring(idx + 1);
-    }
 
     // Subtle toolbar surface behind the whole bar.
     Rectangle {
@@ -92,8 +81,7 @@ Item {
                         spacing: Kirigami.Units.smallSpacing
 
                         QQC2.Label {
-                            text: root.labelMarkup(seg.modelData.text, seg.modelData.letter)
-                            textFormat: Text.StyledText
+                            text: seg.modelData.text
                             color: seg.current ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
                             font.bold: seg.current
                             verticalAlignment: Text.AlignVCenter

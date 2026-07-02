@@ -30,7 +30,6 @@ set(QALKULATOR_QML_FILES
     qml/Keypad.qml
     qml/ConverterView.qml
     qml/StatusBar.qml
-    qml/AccessKeyOverlay.qml
     qml/KeyCap.qml
     qml/SettingsDialog.qml
     qml/UnitPickerPopup.qml

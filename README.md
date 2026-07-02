@@ -45,8 +45,8 @@ engine, so the math is correct and the app stays fast and small.
 - **Result flow** — send a result into a converter and the converted value back again.
 - **Unit autocomplete** — type `ft`, `feet`, or `foot` and QalKulator suggests the unit and
   the correct way to write it; `Ctrl+U` browses the whole list.
-- **Keyboard-first** — every action has a visible key cue, an `Alt` access-key overlay,
-  and a collapsible on-screen keypad that mirrors the keyboard.
+- **Keyboard-first** — every action carries a visible key cue, and a collapsible
+  on-screen keypad mirrors the keyboard.
 - **Native theming** — follows your Breeze light/dark colour scheme automatically.
 
 ## A closer look
@@ -89,7 +89,7 @@ engine, so the math is correct and the app stays fast and small.
 | `Ctrl+U` | Browse & insert a unit |
 | `Ctrl+→` / `Ctrl+←` | Send a result to the converter / send it back |
 | `Ctrl+S` · `Ctrl+K` · `Ctrl+C` | Swap from/to · toggle keypad · copy result |
-| `Alt` | Reveal the access-key overlay (then `Alt+C` / `Alt+U` / `Alt+R` jump to a mode) |
+| `Alt+C` / `Alt+U` / `Alt+R` | Jump to Calculator / Units / Currency |
 | `Ctrl+,` | Open settings |
 
 ## Build

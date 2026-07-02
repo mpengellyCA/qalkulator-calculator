@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Main — the single-page host (§4, §9). A minimal Kirigami.ApplicationWindow
-// with NO global drawer/hamburger. Holds mode + altHeld state, hosts the
-// ModeBar, the Calculator stack (tape → expression + preview → keypad) and the
-// ConverterView (Units + Currency), the pinned StatusBar, the results popup,
-// the Alt access-key overlay, and the settings dialog. All global shortcuts and
-// the flow wiring (§5.2, §7) live here.
+// with NO global drawer/hamburger. Holds the mode state, hosts the ModeBar, the
+// ToolsBar, the Calculator stack (tape → expression + preview → keypad) and the
+// ConverterView (Units + Currency), the pinned StatusBar, the results popup and
+// the settings dialog. All global shortcuts and the flow wiring (§5.2, §7) live
+// here. (Alt+C/U/R still jump to a mode; there is no reveal overlay.)
 
 import QtQuick
 import QtQuick.Layouts
@@ -37,8 +37,6 @@ Kirigami.ApplicationWindow {
 
     // 0 Calculator, 1 Units, 2 Currency.
     property int mode: 0
-    // True while Alt is held — drives progressive mnemonic disclosure (§8).
-    property bool altHeld: false
 
     readonly property bool isConverter: mode === 1 || mode === 2
 
@@ -54,8 +52,6 @@ Kirigami.ApplicationWindow {
             Qt.callLater(expressionField.forceFocus);
     }
     onModeChanged: {
-        // A mode was chosen — the mnemonic reveal has done its job.
-        altHeld = false;
         // Remember the last-used converter so Ctrl+→ targets it (§5.2, §11).
         if (mode === 1 && Config.lastConverterMode !== 0) {
             Config.lastConverterMode = 0;
@@ -119,19 +115,6 @@ Kirigami.ApplicationWindow {
         enabled: appWindow.isConverter
         onActivated: appWindow.sendConvertedToCalculator()
     }
-
-    // Alt reveal. True key-release detection isn't reliable through QML
-    // Shortcut, so per the contract we accept a press-scoped toggle on the bare
-    // Alt modifier: tapping Alt flips the mnemonic reveal on/off. It is always
-    // cleared when the window loses focus (so it can't get stuck) and once a
-    // mode is chosen (its job is done). The Alt+C/Alt+U/Alt+R jumps below still
-    // work independently of this reveal state.
-    Shortcut {
-        id: altReveal
-        sequences: ["Alt"]
-        onActivated: appWindow.altHeld = !appWindow.altHeld
-    }
-    onActiveChanged: if (!active) altHeld = false
 
     // --- Flow wiring (§5.2) ----------------------------------------------
     // Ctrl+→ : send a result into the last-used converter and switch mode.
@@ -203,7 +186,6 @@ Kirigami.ApplicationWindow {
                 id: modeBar
                 Layout.fillWidth: true
                 currentIndex: appWindow.mode
-                altHeld: appWindow.altHeld
                 onModeSelected: function (index) { appWindow.mode = index; }
             }
 
@@ -383,31 +365,6 @@ Kirigami.ApplicationWindow {
             appWindow.sendResultToConverter(row, v);
         }
         onClosed: appWindow.focusExpression()
-    }
-
-    // --- Alt access-key overlay ------------------------------------------
-    AccessKeyOverlay {
-        id: accessOverlay
-        parent: appWindow.contentItem
-        anchors.fill: parent
-        active: appWindow.altHeld
-        // Badges near the three mode tabs and the keypad toggle. Positions are
-        // derived from the ModeBar/StatusBar geometry at reveal time.
-        anchorsList: {
-            if (!appWindow.altHeld)
-                return [];
-            var out = [];
-            var segW = modeBar.width / 3;
-            var tabTop = modeBar.mapToItem(appWindow.contentItem, 0, 0).y
-                         + Kirigami.Units.smallSpacing;
-            var letters = ["C", "U", "R"];
-            for (var i = 0; i < 3; ++i) {
-                var cx = modeBar.mapToItem(appWindow.contentItem,
-                                          segW * i + Kirigami.Units.largeSpacing, 0).x;
-                out.push({ x: cx, y: tabTop, letter: letters[i] });
-            }
-            return out;
-        }
     }
 
     // --- Settings dialog --------------------------------------------------
