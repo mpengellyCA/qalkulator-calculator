@@ -4,7 +4,7 @@
 // AmountHistoryPopup — the converter's "recent results" dropdown. Unlike the
 // Calculator's tape dropdown it lists only entries usable here: raw numbers and
 // quantities in a unit compatible with the current From selection (computed in
-// C++ by Engine.compatibleAmounts). Picking one loads its amount (already
+// C++ by inst.engine.compatibleAmounts). Picking one loads its amount (already
 // expressed in the From unit) into the converter.
 
 import QtQuick
@@ -15,6 +15,8 @@ import io.github.mpengellyca.qalkulator
 
 QQC2.Popup {
     id: root
+
+    property var inst
 
     readonly property string monoFamily: Style.monoFamily
 

@@ -17,6 +17,8 @@ import io.github.mpengellyca.qalkulator
 QQC2.Popup {
     id: root
 
+    property var inst
+
     // Anchored under its parent (the expression field). Opens downward, but flips
     // above the field when it would be clipped by the window's bottom edge — so it
     // is never cut off however short the window (or wherever the keypad sits).
@@ -49,8 +51,8 @@ QQC2.Popup {
     // index) renders at the top; highlight it and give the list active focus so
     // the arrow keys actually navigate it.
     onOpened: {
-        if (Register.count > 0) {
-            listView.currentIndex = Register.count - 1;
+        if (inst.history.count > 0) {
+            listView.currentIndex = inst.history.count - 1;
             listView.positionViewAtEnd();
         }
         listView.forceActiveFocus();
@@ -80,7 +82,7 @@ QQC2.Popup {
         spacing: 0
 
         QQC2.Label {
-            visible: Register.count === 0
+            visible: inst.history.count === 0
             Layout.fillWidth: true
             Layout.margins: Kirigami.Units.largeSpacing
             horizontalAlignment: Text.AlignHCenter
@@ -91,7 +93,7 @@ QQC2.Popup {
         QQC2.ScrollView {
             // Like the units popover: the ScrollView reserves space for the
             // scrollbar so it never overlaps the right-aligned values.
-            visible: Register.count > 0
+            visible: inst.history.count > 0
             Layout.fillWidth: true
             Layout.preferredHeight: Math.min(listView.contentHeight,
                                              Kirigami.Units.gridUnit * 12)
@@ -100,7 +102,7 @@ QQC2.Popup {
         ListView {
             id: listView
             focus: true
-            model: Register
+            model: inst.history
             keyNavigationEnabled: true
             highlightMoveDuration: 0
 
@@ -161,7 +163,7 @@ QQC2.Popup {
             Keys.onPressed: function (event) {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                     if (listView.currentIndex >= 0) {
-                        var v = Register.valueAt(listView.currentIndex);
+                        var v = inst.history.valueAt(listView.currentIndex);
                         root.valueChosen(v);
                     }
                     root.close();
@@ -170,7 +172,7 @@ QQC2.Popup {
                            && (event.modifiers & Qt.ControlModifier)) {
                     if (listView.currentIndex >= 0) {
                         root.sendToConverter(listView.currentIndex,
-                                             Register.valueAt(listView.currentIndex));
+                                             inst.history.valueAt(listView.currentIndex));
                     }
                     root.close();
                     event.accepted = true;

@@ -77,8 +77,10 @@ public:
     Q_INVOKABLE void copyToClipboard(const QString &text);
     Q_INVOKABLE QString clipboardText() const;
 
-    // Shared serialization lock for CurrencyService.
+    // Shared serialization lock for CurrencyService AND every engine instance:
+    // all access to the single global libqalculate CALCULATOR serializes on it.
     QRecursiveMutex *calcMutex();
+    static QRecursiveMutex &sharedCalcMutex();
 
 public Q_SLOTS:
     // Re-run the last preview so a settings change (format/precision/angle unit)
@@ -112,7 +114,7 @@ private:
 
     QThread *m_thread = nullptr;
     CalcWorker *m_worker = nullptr;
-    mutable QRecursiveMutex m_calcMutex; // locked from const query methods too
+    static int s_engineCount; // live engines; the last one tears down CALCULATOR
 
     // Preview state
     QString m_livePreview;

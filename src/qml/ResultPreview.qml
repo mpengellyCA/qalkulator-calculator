@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // ResultPreview — the live "= result" beneath the expression (§9.1).
-// Shows Engine.livePreview in the accent color, monospace. Dims when input is
+// Shows inst.engine.livePreview in the accent color, monospace. Dims when input is
 // empty; on a parse/eval error shows a subtle muted hint rather than a hard
 // error. Carries a small copy affordance (⌃C).
 
@@ -14,6 +14,8 @@ import io.github.mpengellyca.qalkulator
 
 Item {
     id: root
+
+    property var inst
 
     readonly property string monoFamily: Style.monoFamily
 
@@ -38,23 +40,23 @@ Item {
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignLeft
 
-            readonly property bool showError: root.hasInput && Engine.livePreviewError
+            readonly property bool showError: root.hasInput && inst.engine.livePreviewError
 
             text: {
                 if (!root.hasInput)
                     return "";
                 if (previewLabel.showError)
                     return i18nc("@info muted preview hint on error", "…");
-                if (Engine.livePreview.length === 0)
+                if (inst.engine.livePreview.length === 0)
                     return "";
-                return "= " + Engine.livePreview;
+                return "= " + inst.engine.livePreview;
             }
 
             color: previewLabel.showError
                    ? Kirigami.Theme.disabledTextColor
                    : Kirigami.Theme.highlightColor
 
-            opacity: root.hasInput && Engine.livePreview.length > 0 ? 1.0 : 0.35
+            opacity: root.hasInput && inst.engine.livePreview.length > 0 ? 1.0 : 0.35
         }
 
         // Copy affordance — visible only when there is a live value to copy.
@@ -63,11 +65,11 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             implicitWidth: copyRow.implicitWidth
             implicitHeight: copyRow.implicitHeight
-            visible: root.hasInput && !Engine.livePreviewError
-                     && Engine.livePreview.length > 0
+            visible: root.hasInput && !inst.engine.livePreviewError
+                     && inst.engine.livePreview.length > 0
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
-            onClicked: Engine.copyToClipboard(Engine.livePreview)
+            onClicked: inst.engine.copyToClipboard(inst.engine.livePreview)
 
             RowLayout {
                 id: copyRow

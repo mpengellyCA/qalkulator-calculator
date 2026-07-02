@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // ResultRegisterView — the Calculator "tape" (§6.1, §9.1). A ListView over the
-// Register model showing "expression = value" rows, newest at the bottom,
+// inst.history model showing "expression = value" rows, newest at the bottom,
 // auto-scrolling on append. Single-click recalls a value into the expression
 // field; double-click reloads its expression for re-editing. Each row reveals a
 // faint "send ⌃→" affordance on hover.
@@ -15,6 +15,8 @@ import io.github.mpengellyca.qalkulator
 
 Item {
     id: root
+
+    property var inst
 
     readonly property string monoFamily: Style.monoFamily
 
@@ -36,7 +38,7 @@ Item {
         height: Math.min(contentHeight, parent.height)
         clip: true
         spacing: 0
-        model: Register
+        model: inst.history
 
         // Newest is the highest index; keep the newest pinned to the bottom.
         verticalLayoutDirection: ListView.TopToBottom

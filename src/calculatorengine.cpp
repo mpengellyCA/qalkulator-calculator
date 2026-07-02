@@ -237,10 +237,18 @@ CalculatorEngine::CalculatorEngine(ResultRegisterModel *registerModel, QObject *
     , m_registerModel(registerModel)
 {
     qRegisterMetaType<quint64>("quint64");
+    ++s_engineCount;
+
+    // Format/precision/angle-unit changes must refresh THIS engine's live result
+    // (each instance wires itself, so every window updates independently).
+    for (auto sig : {&QalkulatorConfig::resultFormatChanged, &QalkulatorConfig::decimalPlacesChanged,
+                     &QalkulatorConfig::thousandsSeparatorChanged, &QalkulatorConfig::angleUnitChanged}) {
+        connect(QalkulatorConfig::self(), sig, this, &CalculatorEngine::refreshFormatting);
+    }
 
     m_thread = new QThread(this);
     m_thread->setObjectName(QStringLiteral("QalKulatorCalcWorker"));
-    m_worker = new CalcWorker(&m_calcMutex);
+    m_worker = new CalcWorker(&sharedCalcMutex());
     m_worker->moveToThread(m_thread);
 
     // Ensure the worker is destroyed on the worker thread when it finishes.
@@ -283,25 +291,36 @@ CalculatorEngine::~CalculatorEngine()
 {
     // Cancel any in-flight calculation and shut the worker thread down cleanly.
     if (CALCULATOR) {
-        CALCULATOR->abort();
+        CALCULATOR->abort(); // unblock our worker if it is mid-evaluation
     }
     if (m_thread) {
         m_thread->quit();
         m_thread->wait();
     }
     // libqalculate keeps a persistent internal calculation thread alive for the
-    // lifetime of the global CALCULATOR. Since we never delete CALCULATOR, that
-    // thread must be terminated explicitly or the process hangs at exit. The
-    // worker above is already stopped, so nothing is mid-evaluation here.
-    if (CALCULATOR) {
+    // lifetime of the global CALCULATOR. Only the LAST engine tears it down —
+    // otherwise destroying a secondary window's engine would kill it under the
+    // engines that are still running.
+    if (--s_engineCount == 0 && CALCULATOR) {
         CALCULATOR->terminateThreads();
     }
 }
 
+QRecursiveMutex &CalculatorEngine::sharedCalcMutex()
+{
+    // One lock guarding the single global CALCULATOR, shared by every engine +
+    // worker and by CurrencyService. Function-local static: thread-safe init,
+    // outlives every instance, never destroyed early.
+    static QRecursiveMutex s_mutex;
+    return s_mutex;
+}
+
 QRecursiveMutex *CalculatorEngine::calcMutex()
 {
-    return &m_calcMutex;
+    return &sharedCalcMutex();
 }
+
+int CalculatorEngine::s_engineCount = 0;
 
 void CalculatorEngine::setCalculating(bool v)
 {
@@ -450,7 +469,7 @@ QString CalculatorEngine::clipboardText() const
 QStringList CalculatorEngine::currencyCodes() const
 {
     QStringList codes;
-    QMutexLocker<QRecursiveMutex> lock(&m_calcMutex);
+    QMutexLocker<QRecursiveMutex> lock(&sharedCalcMutex());
     for (Unit *u : CALCULATOR->units) {
         if (u && u->isCurrency()) {
             const QString abbr = QString::fromStdString(u->abbreviation(true, false));
@@ -486,7 +505,7 @@ QVariantList CalculatorEngine::compatibleAmounts(const QString &fromUnit) const
         return out;
     }
 
-    QMutexLocker<QRecursiveMutex> lock(&m_calcMutex);
+    QMutexLocker<QRecursiveMutex> lock(&sharedCalcMutex());
 
     // Drain the message queue after a calculation, noting whether it errored.
     auto hadError = []() -> bool {
@@ -587,7 +606,7 @@ QVariantMap CalculatorEngine::classifyAmount(const QString &value) const
         return res;
     }
 
-    QMutexLocker<QRecursiveMutex> lock(&m_calcMutex);
+    QMutexLocker<QRecursiveMutex> lock(&sharedCalcMutex());
 
     auto hadError = []() -> bool {
         bool err = false;

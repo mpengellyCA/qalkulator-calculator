@@ -8,6 +8,10 @@ target_sources(qalkulator PRIVATE
     resultregistermodel.h
     currencyservice.cpp
     currencyservice.h
+    calcinstance.cpp
+    calcinstance.h
+    windowmanager.cpp
+    windowmanager.h
 )
 
 # Windows: embed the app icon (Explorer/taskbar/title-bar icon).
@@ -20,6 +24,7 @@ kconfig_add_kcfg_files(qalkulator GENERATE_MOC qalkulatorconfig.kcfgc)
 
 set(QALKULATOR_QML_FILES
     qml/Main.qml
+    qml/CalcWindow.qml
     qml/ModeBar.qml
     qml/ToolsBar.qml
     qml/ExpressionField.qml
@@ -35,13 +40,15 @@ set(QALKULATOR_QML_FILES
     qml/UnitPickerPopup.qml
 )
 
-# Shared QML singletons (app-wide style constants + the unit catalogue).
+# Shared QML singletons (app-wide style constants, the unit catalogue, and the
+# window spawner that both the bootstrap and open windows use).
 set_source_files_properties(qml/Style.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(qml/Units.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/WindowSpawner.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 ecm_add_qml_module(qalkulator URI io.github.mpengellyca.qalkulator GENERATE_PLUGIN_SOURCE)
 ecm_target_qml_sources(qalkulator SOURCES ${QALKULATOR_QML_FILES})
-ecm_target_qml_sources(qalkulator SOURCES qml/Style.qml qml/Units.qml)
+ecm_target_qml_sources(qalkulator SOURCES qml/Style.qml qml/Units.qml qml/WindowSpawner.qml)
 
 target_include_directories(qalkulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

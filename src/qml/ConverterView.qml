@@ -4,7 +4,7 @@
 // ConverterView — Units (isCurrency=false) and Currency (isCurrency=true) modes
 // (§6.2, §6.3). A large editable "from" amount + a type-to-filter selector, a
 // read-only "to" output with its own selector, and a swap control between them
-// (Ctrl+S). Drives Engine.updateConversion live, persists selections to Config,
+// (Ctrl+S). Drives inst.engine.updateConversion live, persists selections to Config,
 // and shows an inbound source chip during flow (§5.2).
 
 import QtQuick
@@ -15,6 +15,8 @@ import io.github.mpengellyca.qalkulator
 
 Item {
     id: root
+
+    property var inst
 
     // Natural height of the form (incl. its margins) — lets the window compute a
     // minimum tall enough that the keypad never overlaps the converter.
@@ -42,7 +44,7 @@ Item {
     // result from the Engine (no shared output state between Units and Currency).
     readonly property int channel: isCurrency ? 1 : 0
 
-    // Local, per-view conversion result — fed by Engine.conversionUpdated.
+    // Local, per-view conversion result — fed by inst.engine.conversionUpdated.
     property string convResult: ""
     property string convRate: ""
     property bool convError: false
@@ -79,9 +81,9 @@ Item {
 
     // Open the recent-results dropdown, filtered to amounts usable here (raw
     // numbers or quantities compatible with the current From unit; see the C++
-    // Engine.compatibleAmounts). Picking one loads it into the amount field.
+    // inst.engine.compatibleAmounts). Picking one loads it into the amount field.
     function _openHistory() {
-        amountHistory.entries = Engine.compatibleAmounts(root.fromSel);
+        amountHistory.entries = inst.engine.compatibleAmounts(root.fromSel);
         amountHistory.open();
     }
 
@@ -107,7 +109,7 @@ Item {
         if (isCurrency) {
             var codes = Currency.currencies;
             if (codes === undefined || codes === null || codes.length === 0)
-                codes = Engine.currencyCodes();
+                codes = inst.engine.currencyCodes();
             for (var c = 0; c < codes.length; ++c) {
                 if (f.length === 0 || codes[c].toLowerCase().indexOf(f) >= 0)
                     out.push({ label: codes[c], value: codes[c], category: "" });
@@ -176,12 +178,12 @@ Item {
     }
 
     function _recompute() {
-        Engine.updateConversion(amountField.text, root.fromSel, root.toSel, root.isCurrency, root.channel);
+        inst.engine.updateConversion(amountField.text, root.fromSel, root.toSel, root.isCurrency, root.channel);
     }
 
     // Consume only this view's own conversion result.
     Connections {
-        target: Engine
+        target: inst.engine
         function onConversionUpdated(channel, result, rate, error) {
             if (channel !== root.channel)
                 return;
@@ -213,7 +215,7 @@ Item {
     }
 
     function keepValue() {
-        Engine.commit(amountField.text + " " + root.fromSel + " to " + root.toSel);
+        inst.engine.commit(amountField.text + " " + root.fromSel + " to " + root.toSel);
     }
 
     // --- Shared keypad input (routed here by Main when in a converter) ----
@@ -258,6 +260,7 @@ Item {
     // (already From-unit) amount into the converter.
     AmountHistoryPopup {
         id: amountHistory
+        inst: root.inst
         parent: amountField
         onPicked: function (amount) { root.loadAmount(amount); }
     }
