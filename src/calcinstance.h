@@ -24,6 +24,7 @@ class CalcInstance : public QObject
     Q_PROPERTY(ResultRegisterModel *history READ history CONSTANT)
     Q_PROPERTY(CalculatorEngine *engine READ engine CONSTANT)
     Q_PROPERTY(QColor accentColor READ accentColor NOTIFY accentColorChanged)
+    Q_PROPERTY(bool hasAccent READ hasAccent NOTIFY accentColorChanged)
     Q_PROPERTY(int instanceId READ instanceId CONSTANT)
     Q_PROPERTY(bool primary READ primary CONSTANT)
 
@@ -34,6 +35,7 @@ public:
     CalculatorEngine *engine() const { return m_engine; }
 
     QColor accentColor() const { return m_accent; }
+    bool hasAccent() const { return m_accent.isValid(); }
     void setAccentColor(const QColor &c);
 
     int instanceId() const { return m_id; }

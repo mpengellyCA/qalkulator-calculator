@@ -21,6 +21,23 @@ Kirigami.ApplicationWindow {
 
     title: i18nc("@title:window", "QalKulator")
 
+    // Secondary windows override the OS accent with their assigned vivid colour so
+    // each thread is instantly distinguishable; the primary follows the OS accent
+    // (inherit:true, which makes Kirigami ignore the placeholder highlightColor).
+    readonly property bool _accented: inst && inst.hasAccent
+
+    // Closing a secondary window drops its ephemeral thread and frees the window;
+    // closing the primary quits the app (even if secondaries are still open).
+    onClosing: {
+        if (inst && !inst.primary) {
+            WindowManager.removeInstance(inst);
+            WindowSpawner.forget(appWindow);
+            appWindow.destroy();
+        } else {
+            Qt.quit();
+        }
+    }
+
     minimumWidth: Kirigami.Units.gridUnit * 20   // ~360 px
     // Never shrink past the point where the current tab + keypad fit (so the
     // keypad can't overlap the converter). All content-based, so no scrollbar.
@@ -74,6 +91,11 @@ Kirigami.ApplicationWindow {
     Shortcut { sequences: ["Ctrl+1"]; onActivated: appWindow.mode = 0 }
     Shortcut { sequences: ["Ctrl+2"]; onActivated: appWindow.mode = 1 }
     Shortcut { sequences: ["Ctrl+3"]; onActivated: appWindow.mode = 2 }
+
+    // Open a new temporary calculator window (its own thread + accent colour).
+    Shortcut { sequences: [StandardKey.New]; onActivated: WindowSpawner.openNew() }
+    // Close this window (a secondary drops its thread; the primary quits).
+    Shortcut { sequences: [StandardKey.Close]; onActivated: appWindow.close() }
 
     // Copy current result from any field.
     Shortcut {
@@ -226,6 +248,19 @@ Kirigami.ApplicationWindow {
 
     pageStack.initialPage: Kirigami.Page {
         id: page
+
+        // Per-window accent: ONLY secondary windows override the OS highlight, and
+        // only via a gated Binding — assigning highlightColor at all on the primary
+        // (even a placeholder) blanks its OS accent, so the primary is left fully
+        // untouched. Set on the Page (an Item) so it propagates to all content.
+        Kirigami.Theme.inherit: !appWindow._accented
+        Binding {
+            target: page.Kirigami.Theme
+            property: "highlightColor"
+            value: appWindow.inst ? appWindow.inst.accentColor : Qt.rgba(0, 0, 0, 0)
+            when: appWindow._accented
+        }
+
         padding: 0
         topPadding: 0
         leftPadding: 0
@@ -269,6 +304,7 @@ Kirigami.ApplicationWindow {
                 onCopyResultRequested: inst.engine.copyToClipboard(appWindow.activeConverter().currentOutput())
                 onCopyValueRequested: inst.engine.copyToClipboard(appWindow.activeConverter().currentAmount())
                 onApplyFavorite: function (from, to) { appWindow.activeConverter().applyPair(from, to); }
+                onNewWindowRequested: WindowSpawner.openNew()
             }
 
             // --- Center: Calculator stack OR ConverterView ----------------
