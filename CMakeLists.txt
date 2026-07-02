@@ -36,6 +36,7 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS
     Quick
     QuickControls2
     Network
+    DBus
 )
 
 find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS

@@ -37,6 +37,7 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringW(const wchar_t
 #include "calcinstance.h"
 #include "calculatorengine.h"
 #include "currencyservice.h"
+#include "kwinscript.h"
 #include "qalkulatorconfig.h"
 #include "resultregistermodel.h"
 #include "windowmanager.h"
@@ -175,18 +176,22 @@ int main(int argc, char *argv[])
     auto *currency = new CurrencyService(primary->engine(), &app);
     currency->refreshIfStale();     // async; never blocks
 
+    // App-side control for the companion magnetic-linking KWin script (KDE only).
+    auto *kwinScript = new KWinScript(&app);
+
     // --- QML ---
     QQmlApplicationEngine qmlEngine;
     KLocalization::setupLocalizedContext(&qmlEngine);
 
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "WindowManager", windows);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Currency", currency);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Magnet", kwinScript);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Config", QalkulatorConfig::self());
 
     // App-owned singletons; make ownership explicit so QML never GCs them. Each
     // per-window CalcInstance is parented to the WindowManager, so the instances
     // QML reaches via WindowManager.instanceAt() are safe too.
-    for (QObject *o : {static_cast<QObject *>(windows), static_cast<QObject *>(currency), static_cast<QObject *>(QalkulatorConfig::self())}) {
+    for (QObject *o : {static_cast<QObject *>(windows), static_cast<QObject *>(currency), static_cast<QObject *>(kwinScript), static_cast<QObject *>(QalkulatorConfig::self())}) {
         QQmlEngine::setObjectOwnership(o, QQmlEngine::CppOwnership);
     }
 

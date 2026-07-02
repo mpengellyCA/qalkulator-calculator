@@ -12,6 +12,8 @@ target_sources(qalkulator PRIVATE
     calcinstance.h
     windowmanager.cpp
     windowmanager.h
+    kwinscript.cpp
+    kwinscript.h
 )
 
 # Windows: embed the app icon (Explorer/taskbar/title-bar icon).
@@ -62,6 +64,7 @@ target_link_libraries(qalkulator PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::Network
+    Qt6::DBus
     KF6::Kirigami
     KF6::CoreAddons
     KF6::ConfigCore

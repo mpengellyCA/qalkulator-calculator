@@ -101,5 +101,21 @@ Kirigami.Dialog {
                 Config.save();
             }
         }
+
+        // KDE-exclusive: magnetic window linking via the companion KWin script.
+        // Only shown on a KDE session where the script is installed.
+        Kirigami.Separator {
+            visible: Magnet.supported
+            Kirigami.FormData.isSection: true
+        }
+        QQC2.CheckBox {
+            visible: Magnet.supported
+            Kirigami.FormData.label: i18nc("@label:check", "Window linking:")
+            text: i18nc("@option:check", "Snap windows side by side (KDE)")
+            checked: Magnet.enabled
+            onToggled: Magnet.setEnabled(checked)
+            QQC2.ToolTip.text: i18nc("@info:tooltip", "Place windows edge-to-edge to link them; move or resize the row as one.")
+            QQC2.ToolTip.visible: hovered
+        }
     }
 }
