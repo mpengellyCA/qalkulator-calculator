@@ -29,6 +29,10 @@
       <label>Last-used converter mode: 0=units, 1=currency. Target of Ctrl+Right.</label>
       <default>1</default>
     </entry>
+    <entry name="defaultCurrency" type="String">
+      <label>Default currency ($, bare currency, unspecified conversion target). Empty = follow the system locale.</label>
+      <default></default>
+    </entry>
     <entry name="fromCurrency" type="String">
       <label>Remembered source currency.</label>
       <default>USD</default>
@@ -57,6 +61,23 @@
     </entry>
     <entry name="favoriteUnitPairs" type="StringList">
       <label>Favourite unit conversions, one "FROM|TO" per entry.</label>
+    </entry>
+  </group>
+  <!-- MCP: let an AI agent drive the Qalculate! engine through a local,
+       token-guarded server. Each agent session opens its own read-only window
+       so the user sees every calculation the agent performs. Off by default. -->
+  <group name="MCP">
+    <entry name="mcpEnabled" type="Bool">
+      <label>Allow AI agents to use the engine over the local MCP server.</label>
+      <default>false</default>
+    </entry>
+    <entry name="mcpPort" type="Int">
+      <label>TCP port the MCP server listens on (loopback only).</label>
+      <default>47600</default>
+    </entry>
+    <entry name="mcpToken" type="String">
+      <label>Shared secret an MCP client must present. Generated on first enable.</label>
+      <default></default>
     </entry>
   </group>
 </kcfg>

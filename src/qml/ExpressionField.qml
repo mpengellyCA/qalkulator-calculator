@@ -15,6 +15,9 @@ import io.github.mpengellyca.qalkulator
 FocusScope {
     id: root
 
+    // The owning window's CalcInstance (its engine + history). Set by CalcWindow.
+    property var inst
+
     readonly property string monoFamily: Style.monoFamily
 
     // --- Public surface (wired by Main / Popup) --------------------------
@@ -35,7 +38,7 @@ FocusScope {
     implicitHeight: field.implicitHeight
     implicitWidth: Kirigami.Units.gridUnit * 12
 
-    // --- History navigation state (readline-style over Register) ----------
+    // --- History navigation state (readline-style over inst.history) ----------
     // -1 means "not navigating"; otherwise it's the row currently recalled.
     property int _historyPos: -1
     // Snapshot of the in-progress line before history walking began.
@@ -64,7 +67,7 @@ FocusScope {
     function insertValue(tokenText) {
         root._resetHistory();
         field.insert(field.cursorPosition, tokenText);
-        Engine.updateInput(field.text);
+        inst.engine.updateInput(field.text);
     }
     // Alias kept for the contract naming used elsewhere.
     function insertToken(tokenText) {
@@ -77,7 +80,7 @@ FocusScope {
         field.text = root._toDisplay(expr);
         field.cursorPosition = field.text.length;
         field.forceActiveFocus();
-        Engine.updateInput(field.text);
+        inst.engine.updateInput(field.text);
     }
 
     // Clear just the entry.
@@ -85,7 +88,7 @@ FocusScope {
         root._resetHistory();
         acPopup.close();
         field.clear();
-        Engine.updateInput("");
+        inst.engine.updateInput("");
     }
 
     // Append a display-operator, phone-style continuation on an empty line.
@@ -139,7 +142,7 @@ FocusScope {
         field.cursorPosition = start + ins.length;
         acPopup.close();
         root._resetHistory();
-        Engine.updateInput(field.text);
+        inst.engine.updateInput(field.text);
     }
 
     // Ctrl+U — browse the whole unit list and insert one at the caret.
@@ -292,9 +295,9 @@ FocusScope {
             if (field.text.length === 0 && event.text.length === 1
                     && root._isOperator(event.text)) {
                 var op = root._toDisplay(event.text);
-                field.text = Engine.ansToken() + " " + op + " ";
+                field.text = inst.engine.ansToken() + " " + op + " ";
                 field.cursorPosition = field.text.length;
-                Engine.updateInput(field.text);
+                inst.engine.updateInput(field.text);
                 event.accepted = true;
                 return;
             }
@@ -310,7 +313,7 @@ FocusScope {
                 field.cursorPosition = pos;
             }
             root._resetHistory();
-            Engine.updateInput(field.text);
+            inst.engine.updateInput(field.text);
             root._updateUnitSuggestions();
         }
 
@@ -500,11 +503,11 @@ FocusScope {
         if (expr.trim().length === 0)
             return;
         acPopup.close();
-        Engine.commit(expr);
+        inst.engine.commit(expr);
         // Ready for continuation — clear the line; the result lands in the tape.
         field.clear();
         root._resetHistory();
-        Engine.updateInput("");
+        inst.engine.updateInput("");
         root.committed();
     }
 
@@ -518,12 +521,12 @@ FocusScope {
         var cut = m ? trimmed.length - m[0].length : 0;
         field.text = field.text.substring(0, cut) + field.text.substring(pos);
         field.cursorPosition = cut;
-        Engine.updateInput(field.text);
+        inst.engine.updateInput(field.text);
         root._updateUnitSuggestions();
     }
 
     function _historyPrev() {
-        var n = Register.count;
+        var n = inst.history.count;
         if (n === 0)
             return;
         if (root._historyPos < 0) {
@@ -535,18 +538,18 @@ FocusScope {
         } else {
             return; // already at oldest
         }
-        field.text = root._toDisplay(Register.expressionAt(root._historyPos));
+        field.text = root._toDisplay(inst.history.expressionAt(root._historyPos));
         field.cursorPosition = field.text.length;
-        Engine.updateInput(field.text);
+        inst.engine.updateInput(field.text);
     }
 
     function _historyNext() {
         if (root._historyPos < 0)
             return;
-        var n = Register.count;
+        var n = inst.history.count;
         if (root._historyPos < n - 1) {
             root._historyPos = root._historyPos + 1;
-            field.text = root._toDisplay(Register.expressionAt(root._historyPos));
+            field.text = root._toDisplay(inst.history.expressionAt(root._historyPos));
         } else {
             // Past the newest → restore the stashed in-progress line.
             root._historyPos = -1;
@@ -554,6 +557,6 @@ FocusScope {
             root._historyStash = "";
         }
         field.cursorPosition = field.text.length;
-        Engine.updateInput(field.text);
+        inst.engine.updateInput(field.text);
     }
 }

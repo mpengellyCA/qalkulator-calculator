@@ -47,6 +47,12 @@ engine, so the math is correct and the app stays fast and small.
   the correct way to write it; `Ctrl+U` browses the whole list.
 - **Keyboard-first** — every action carries a visible key cue, and a collapsible
   on-screen keypad mirrors the keyboard.
+- **Linked windows** — open extra temporary calculator windows (`Ctrl+N`), each a
+  separate thread of results with its own vivid accent colour; browse and pull in
+  any window's results from the `Ctrl+↓` dropdown with `←/→`.
+- **AI agents (MCP)** — opt in to a local, token-guarded [Model Context Protocol](docs/mcp.md)
+  server so an AI agent can use the Qalculate! engine. Each agent opens its own
+  read-only window that streams its working live, so you see every calculation.
 - **Native theming** — follows your Breeze light/dark colour scheme automatically.
 
 ## A closer look
@@ -89,6 +95,8 @@ engine, so the math is correct and the app stays fast and small.
 | `Ctrl+U` | Browse & insert a unit |
 | `Ctrl+→` / `Ctrl+←` | Send a result to the fitting converter — units→Units, currency→Currency, a plain number→Units (press `Ctrl+→` again for Currency) — or send the converted value back |
 | `Ctrl+S` · `Ctrl+K` · `Ctrl+C` | Swap from/to · toggle keypad · copy result |
+| `Ctrl+N` / `Ctrl+W` | New temporary window / close the current window |
+| `←` / `→` (in the results dropdown) | Browse other windows' histories |
 | `Ctrl+,` | Open settings |
 
 ## Build

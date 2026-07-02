@@ -36,6 +36,7 @@ find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS
     Quick
     QuickControls2
     Network
+    DBus
 )
 
 find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
@@ -70,6 +71,15 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/io.github.mpengellyca.qalkulator.metai
     DESTINATION ${KDE_INSTALL_METAINFODIR})
 install(FILES icons/io.github.mpengellyca.qalkulator.svg
     DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/scalable/apps)
+
+# Companion KWin script for magnetic window linking — a KDE-exclusive feature
+# (Wayland clients can't self-position; the compositor can). Ships on Linux only
+# and is opt-in: users enable it in System Settings → Window Management → KWin
+# Scripts (or via the in-app toggle). No effect on Windows/macOS.
+if(NOT WIN32 AND NOT APPLE)
+    install(DIRECTORY packaging/kwin/qalkulator-magnetic
+        DESTINATION ${KDE_INSTALL_DATADIR}/kwin/scripts)
+endif()
 
 # --- Packaging (CPack: TGZ + DEB + RPM) ------------------------------------
 set(CPACK_PACKAGE_NAME "qalkulator")

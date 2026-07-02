@@ -34,6 +34,7 @@ Item {
     signal copyResultRequested()        // converter: copy the converted output
     signal copyValueRequested()         // converter: copy the entered amount
     signal applyFavorite(string from, string to)
+    signal newWindowRequested()         // open another temporary calculator window
 
     readonly property bool isCurrency: mode === 2
     readonly property bool isConverter: mode === 1 || mode === 2
@@ -180,8 +181,15 @@ Item {
             onClicked: root.copyValueRequested()
         }
 
-        // Push everything to the left.
+        // Push the context actions to the left; window actions sit on the right.
         Item { Layout.fillWidth: true }
+
+        // New temporary window (its own thread + accent) — a global action.
+        SlimBtn {
+            icon.name: "window-new"
+            QQC2.ToolTip.text: i18nc("@info:tooltip", "New window (⌃N)")
+            onClicked: root.newWindowRequested()
+        }
     }
 
     // Favourites dropdown: saved pairs (click to apply) + a save/remove toggle

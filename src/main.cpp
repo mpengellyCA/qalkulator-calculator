@@ -15,6 +15,7 @@
 #include <QQuickWindow>
 #include <QResource>
 #include <QTimer>
+#include <QWindow>
 
 #ifdef Q_OS_WIN
 // Declared directly rather than via <windows.h>, whose macros (OPTIONAL, IN, …)
@@ -33,10 +34,14 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringW(const wchar_t
 
 #include <libqalculate/qalculate.h>
 
+#include "calcinstance.h"
 #include "calculatorengine.h"
 #include "currencyservice.h"
+#include "kwinscript.h"
+#include "mcpserver.h"
 #include "qalkulatorconfig.h"
 #include "resultregistermodel.h"
+#include "windowmanager.h"
 
 #ifndef QALKULATOR_VERSION
 #define QALKULATOR_VERSION "0.1.0-dev"
@@ -163,41 +168,43 @@ int main(int argc, char *argv[])
     }
 
     // --- Thin C++ services ---
-    auto *registerModel = new ResultRegisterModel(&app);
-    auto *engine = new CalculatorEngine(registerModel, &app);
-    auto *currency = new CurrencyService(engine, &app);
+    // The WindowManager owns per-window instances; the primary carries the
+    // persistent main tape. Secondary instances are created on demand from QML.
+    auto *windows = new WindowManager(&app);
+    CalcInstance *primary = windows->createPrimary();
+    primary->history()->restore();  // rehydrate the main tape from KConfig
 
-    registerModel->restore();      // rehydrate the tape from KConfig
-    currency->refreshIfStale();    // async; never blocks
+    auto *currency = new CurrencyService(primary->engine(), &app);
+    currency->refreshIfStale();     // async; never blocks
+
+    // App-side control for the companion magnetic-linking KWin script (KDE only).
+    auto *kwinScript = new KWinScript(&app);
+
+    // MCP server: lets an AI agent drive the engine via read-only agent windows.
+    // Off unless the user enabled it (the ctor auto-starts when so configured).
+    auto *mcp = new McpServer(windows, &app);
 
     // --- QML ---
     QQmlApplicationEngine qmlEngine;
     KLocalization::setupLocalizedContext(&qmlEngine);
 
-    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Engine", engine);
-    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Register", registerModel);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "WindowManager", windows);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Currency", currency);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Magnet", kwinScript);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Mcp", mcp);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Config", QalkulatorConfig::self());
 
-    // These instances are C++-owned (parented to the app / KConfigXT); make that
-    // explicit so the QML engine never garbage-collects them.
-    for (QObject *o : {static_cast<QObject *>(engine), static_cast<QObject *>(registerModel), static_cast<QObject *>(currency), static_cast<QObject *>(QalkulatorConfig::self())}) {
+    // App-owned singletons; make ownership explicit so QML never GCs them. Each
+    // per-window CalcInstance is parented to the WindowManager, so the instances
+    // QML reaches via WindowManager.instanceAt() are safe too.
+    for (QObject *o : {static_cast<QObject *>(windows), static_cast<QObject *>(currency), static_cast<QObject *>(kwinScript), static_cast<QObject *>(mcp), static_cast<QObject *>(QalkulatorConfig::self())}) {
         QQmlEngine::setObjectOwnership(o, QQmlEngine::CppOwnership);
     }
 
-    // Result-format / precision / angle-unit changes must refresh the live result
-    // immediately (the Settings dialog only writes Config).
-    const QList<void (QalkulatorConfig::*)()> formatSignals = {
-        &QalkulatorConfig::resultFormatChanged,
-        &QalkulatorConfig::decimalPlacesChanged,
-        &QalkulatorConfig::thousandsSeparatorChanged,
-        &QalkulatorConfig::angleUnitChanged,
-    };
-    for (auto sig : formatSignals) {
-        QObject::connect(QalkulatorConfig::self(), sig, engine, &CalculatorEngine::refreshFormatting);
-    }
+    // (Format/precision/angle-unit → refreshFormatting is wired inside each
+    // CalculatorEngine's constructor, so every window updates independently.)
 
-    QObject::connect(&app, &QApplication::aboutToQuit, registerModel, &ResultRegisterModel::persist);
+    QObject::connect(&app, &QApplication::aboutToQuit, primary->history(), &ResultRegisterModel::persist);
     QObject::connect(&app, &QApplication::aboutToQuit, []() { QalkulatorConfig::self()->save(); });
 
     qmlEngine.loadFromModule("io.github.mpengellyca.qalkulator", "Main");
@@ -210,7 +217,15 @@ int main(int argc, char *argv[])
     // normal runs.
     const QByteArray shotPath = qgetenv("QK_SCREENSHOT");
     if (!shotPath.isEmpty()) {
-        if (auto *win = qobject_cast<QQuickWindow *>(qmlEngine.rootObjects().constFirst())) {
+        // The QML root is now a non-visual bootstrap; the window is a separate
+        // top-level it created. Grab the first QQuickWindow.
+        QQuickWindow *win = nullptr;
+        for (QWindow *w : QGuiApplication::topLevelWindows()) {
+            if ((win = qobject_cast<QQuickWindow *>(w))) {
+                break;
+            }
+        }
+        if (win) {
             int w = 440, h = 780;
             const QList<QByteArray> sz = qgetenv("QK_SCREENSHOT_SIZE").split('x');
             if (sz.size() == 2) {
@@ -236,7 +251,7 @@ int main(int argc, char *argv[])
                     for (const QString &e : {QStringLiteral("1250 * 1.13"), QStringLiteral("200 + 15%"),
                                              QStringLiteral("12% of 340"), QStringLiteral("(3+4)^2"),
                                              QStringLiteral("sqrt(2)")}) {
-                        engine->commit(e);
+                        primary->engine()->commit(e);
                     }
                 }
             }

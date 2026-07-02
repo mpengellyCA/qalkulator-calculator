@@ -3,10 +3,11 @@
 
 // ResultRegisterPopup — the Ctrl+Down recent-results dropdown (§7.1, §9.3).
 // A floating popover anchored under the ExpressionField, listing recent results
-// as "expression = value" newest-first. ↑/↓ navigate, Enter inserts the
-// highlighted value, Esc closes, Ctrl+→ sends the highlighted row to the
-// converter. A footer strip prints its own keys. Reads as elevation via a
-// border + subtle popover shadow only (§8).
+// as "expression = value" newest-first. ↑/↓ navigate rows, ←/→ browse OTHER
+// windows' histories (starting on your own, in open order), Enter inserts the
+// highlighted value into THIS window, Esc closes, Ctrl+→ sends the highlighted
+// row to THIS window's converter. The list is tinted with the shown window's
+// accent so you always know whose thread you're browsing. A footer prints keys.
 
 import QtQuick
 import QtQuick.Layouts
@@ -17,12 +18,22 @@ import io.github.mpengellyca.qalkulator
 QQC2.Popup {
     id: root
 
+    // This window's own instance (where chosen values land).
+    property var inst
+
+    // Cross-window browse: which window's history is shown. Reset to this window
+    // on open; ←/→ cycle through all windows in open order (wrapping).
+    property int viewIndex: 0
+    readonly property var viewInst: WindowManager.instanceAt(viewIndex) || inst
+    readonly property bool viewingOwn: viewInst === inst
+    // Accent of the shown window (primary records its OS accent, so always valid).
+    readonly property color viewAccent: (viewInst && viewInst.accentColor.a > 0)
+                                        ? viewInst.accentColor
+                                        : Kirigami.Theme.highlightColor
+
     // Anchored under its parent (the expression field). Opens downward, but flips
-    // above the field when it would be clipped by the window's bottom edge — so it
-    // is never cut off however short the window (or wherever the keypad sits).
+    // above the field when it would be clipped by the window's bottom edge.
     property bool _flipUp: false
-    // Worst-case popup height used only to DECIDE the flip (the ListView's real
-    // contentHeight fills in async); the flipped y binds to the real implicitHeight.
     readonly property real _estHeight: Kirigami.Units.gridUnit * 15
     x: 0
     width: parent ? parent.width : implicitWidth
@@ -37,34 +48,46 @@ QQC2.Popup {
 
     readonly property string monoFamily: Style.monoFamily
 
-    // Insert the chosen entry's value into the expression field.
+    // Insert the chosen entry's value into THIS window's expression field.
     signal valueChosen(string value)
-    // Send the highlighted entry to the converter (Ctrl+→ flow).
+    // Send the highlighted entry to THIS window's converter (Ctrl+→ flow).
     signal sendToConverter(int row, string value)
 
     modal: false
     focus: true
     padding: 0
-    // Show newest first: with a BottomToTop view the newest (highest model
-    // index) renders at the top; highlight it and give the list active focus so
-    // the arrow keys actually navigate it.
+
     onOpened: {
-        if (Register.count > 0) {
-            listView.currentIndex = Register.count - 1;
-            listView.positionViewAtEnd();
-        }
+        root.viewIndex = Math.max(0, WindowManager.orderOf(inst));
+        root._resetSelection();
         listView.forceActiveFocus();
+    }
+
+    function _resetSelection() {
+        if (viewInst && viewInst.history.count > 0) {
+            listView.currentIndex = viewInst.history.count - 1; // newest
+            listView.positionViewAtEnd();
+        } else {
+            listView.currentIndex = -1;
+        }
+    }
+    function _cycleWindow(delta) {
+        var n = WindowManager.count;
+        if (n <= 1)
+            return;
+        root.viewIndex = (root.viewIndex + delta + n) % n;
+        root._resetSelection();
     }
 
     background: Rectangle {
         color: Kirigami.Theme.backgroundColor
         border.width: 1
-        border.color: Qt.rgba(Kirigami.Theme.textColor.r,
-                              Kirigami.Theme.textColor.g,
-                              Kirigami.Theme.textColor.b, 0.25)
+        // Border picks up the shown window's accent so cross-window browsing reads.
+        border.color: root.viewingOwn
+                      ? Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g,
+                                Kirigami.Theme.textColor.b, 0.25)
+                      : Qt.rgba(root.viewAccent.r, root.viewAccent.g, root.viewAccent.b, 0.7)
         radius: Kirigami.Units.smallSpacing
-        // Elevation reads via the border above plus the small drop shadow below,
-        // the only elevation in the app (§8).
 
         Rectangle {
             z: -1
@@ -79,8 +102,38 @@ QQC2.Popup {
     contentItem: ColumnLayout {
         spacing: 0
 
+        // Cross-window header: a swatch of the shown window's accent + its place
+        // in the open order. Only shown when more than one window is open.
+        RowLayout {
+            visible: WindowManager.count > 1
+            Layout.fillWidth: true
+            Layout.margins: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.smallSpacing
+            Rectangle {
+                implicitWidth: Kirigami.Units.gridUnit * 0.7
+                implicitHeight: implicitWidth
+                radius: implicitWidth / 2
+                color: root.viewAccent
+            }
+            QQC2.Label {
+                Layout.fillWidth: true
+                text: root.viewingOwn
+                      ? i18nc("@info cross-window results", "This window")
+                      : i18nc("@info cross-window results", "Window %1 of %2",
+                              root.viewIndex + 1, WindowManager.count)
+                font: Kirigami.Theme.smallFont
+                color: Kirigami.Theme.textColor
+                elide: Text.ElideRight
+            }
+            KeyCap { text: "←→"; fontScale: 0.85 }
+        }
+        Kirigami.Separator {
+            visible: WindowManager.count > 1
+            Layout.fillWidth: true
+        }
+
         QQC2.Label {
-            visible: Register.count === 0
+            visible: root.viewInst && root.viewInst.history.count === 0
             Layout.fillWidth: true
             Layout.margins: Kirigami.Units.largeSpacing
             horizontalAlignment: Text.AlignHCenter
@@ -89,9 +142,7 @@ QQC2.Popup {
         }
 
         QQC2.ScrollView {
-            // Like the units popover: the ScrollView reserves space for the
-            // scrollbar so it never overlaps the right-aligned values.
-            visible: Register.count > 0
+            visible: root.viewInst && root.viewInst.history.count > 0
             Layout.fillWidth: true
             Layout.preferredHeight: Math.min(listView.contentHeight,
                                              Kirigami.Units.gridUnit * 12)
@@ -100,14 +151,12 @@ QQC2.Popup {
         ListView {
             id: listView
             focus: true
-            model: Register
+            model: root.viewInst ? root.viewInst.history : null
             keyNavigationEnabled: true
             highlightMoveDuration: 0
 
             highlight: Rectangle {
-                color: Qt.rgba(Kirigami.Theme.highlightColor.r,
-                               Kirigami.Theme.highlightColor.g,
-                               Kirigami.Theme.highlightColor.b, 0.18)
+                color: Qt.rgba(root.viewAccent.r, root.viewAccent.g, root.viewAccent.b, 0.18)
             }
 
             delegate: QQC2.ItemDelegate {
@@ -138,7 +187,6 @@ QQC2.Popup {
                         color: Kirigami.Theme.disabledTextColor
                         elide: Text.ElideRight
                     }
-                    // "send ⌃→" on the highlighted row.
                     KeyCap {
                         visible: entry.active
                         text: "⌃→"
@@ -148,31 +196,35 @@ QQC2.Popup {
                         text: "= " + entry.value
                         font.family: root.monoFamily
                         font.bold: true
-                        color: Kirigami.Theme.highlightColor
+                        color: root.viewAccent
                     }
                 }
             }
 
-            // Note: the model is oldest→newest by index, but the user reads
-            // the dropdown newest-first. We flip the view direction so the
-            // newest sits at the top and ↑/↓ feel natural.
+            // Model is oldest→newest by index; the user reads newest-first, so the
+            // view is flipped (newest at top, ↑/↓ natural).
             verticalLayoutDirection: ListView.BottomToTop
 
             Keys.onPressed: function (event) {
                 if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                    if (listView.currentIndex >= 0) {
-                        var v = Register.valueAt(listView.currentIndex);
-                        root.valueChosen(v);
+                    if (listView.currentIndex >= 0 && root.viewInst) {
+                        root.valueChosen(root.viewInst.history.valueAt(listView.currentIndex));
                     }
                     root.close();
                     event.accepted = true;
                 } else if (event.key === Qt.Key_Right
                            && (event.modifiers & Qt.ControlModifier)) {
-                    if (listView.currentIndex >= 0) {
-                        root.sendToConverter(listView.currentIndex,
-                                             Register.valueAt(listView.currentIndex));
+                    if (listView.currentIndex >= 0 && root.viewInst) {
+                        // Value only (row is into the viewed history, not ours).
+                        root.sendToConverter(-1, root.viewInst.history.valueAt(listView.currentIndex));
                     }
                     root.close();
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Left) {
+                    root._cycleWindow(-1);
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Right) {
+                    root._cycleWindow(1);
                     event.accepted = true;
                 }
             }
@@ -192,15 +244,16 @@ QQC2.Popup {
                 font: Kirigami.Theme.smallFont
                 color: Kirigami.Theme.disabledTextColor
             }
-            KeyCap { text: "⏎"; fontScale: 0.85 }
+            KeyCap { text: "←→"; fontScale: 0.85; visible: WindowManager.count > 1 }
             QQC2.Label {
-                text: i18nc("@info dropdown hint", "insert")
+                visible: WindowManager.count > 1
+                text: i18nc("@info dropdown hint", "window")
                 font: Kirigami.Theme.smallFont
                 color: Kirigami.Theme.disabledTextColor
             }
-            KeyCap { text: "⌃→"; fontScale: 0.85 }
+            KeyCap { text: "⏎"; fontScale: 0.85 }
             QQC2.Label {
-                text: i18nc("@info dropdown hint", "send")
+                text: i18nc("@info dropdown hint", "insert")
                 font: Kirigami.Theme.smallFont
                 color: Kirigami.Theme.disabledTextColor
             }

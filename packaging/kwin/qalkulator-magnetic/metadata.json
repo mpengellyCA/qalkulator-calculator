@@ -1,0 +1,15 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "X-Plasma-API": "javascript",
+    "KPlugin": {
+        "Id": "qalkulator-magnetic",
+        "Name": "QalKulator Window Linking",
+        "Description": "Magnetically snap QalKulator windows side by side and move/resize them as a group.",
+        "Icon": "io.github.mpengellyca.qalkulator",
+        "License": "AGPL-3.0-or-later",
+        "Version": "1.0",
+        "Authors": [
+            { "Name": "Mike Pengelly" }
+        ]
+    }
+}

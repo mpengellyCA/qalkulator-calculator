@@ -4,6 +4,7 @@
 #include "currencyservice.h"
 
 #include "calculatorengine.h"
+#include "qalkulatorconfig.h"
 
 #include <QDateTime>
 #include <QMutexLocker>
@@ -16,6 +17,11 @@ CurrencyService::CurrencyService(CalculatorEngine *engine, QObject *parent)
     : QObject(parent)
     , m_engine(engine)
 {
+    // Definitions + rates are loaded in main() before we are constructed, so the
+    // locale's local currency is resolved by now. Record it, then apply any saved
+    // override so "$"/bare-currency/unspecified conversions use the chosen unit.
+    captureLocaleCurrency();
+    applyLocalCurrency(QalkulatorConfig::self()->defaultCurrency());
 }
 
 CurrencyService::~CurrencyService()
@@ -34,6 +40,48 @@ CurrencyService::~CurrencyService()
         // Else: still downloading — do NOT delete a running QThread (that aborts).
         // The process is exiting; intentionally leak it and let the OS reap it.
         m_fetchThread = nullptr;
+    }
+}
+
+QString CurrencyService::defaultCurrency() const
+{
+    return QalkulatorConfig::self()->defaultCurrency();
+}
+
+void CurrencyService::setDefaultCurrency(const QString &code)
+{
+    if (QalkulatorConfig::self()->defaultCurrency() == code) {
+        return;
+    }
+    QalkulatorConfig::self()->setDefaultCurrency(code);
+    QalkulatorConfig::self()->save();
+    applyLocalCurrency(code);
+    Q_EMIT defaultCurrencyChanged();
+}
+
+void CurrencyService::captureLocaleCurrency()
+{
+    QMutexLocker<QRecursiveMutex> lock(m_engine->calcMutex());
+    if (Unit *u = CALCULATOR->getLocalCurrency()) {
+        m_localeCurrency = QString::fromStdString(u->abbreviation(true, false));
+    }
+}
+
+void CurrencyService::applyLocalCurrency(const QString &code)
+{
+    // Empty => restore the captured locale default. Re-resolve the Unit* by code
+    // every time: a rate reload recreates the currency units, so cached pointers
+    // would dangle.
+    const QString target = code.isEmpty() ? m_localeCurrency : code;
+    if (target.isEmpty()) {
+        return;
+    }
+    QMutexLocker<QRecursiveMutex> lock(m_engine->calcMutex());
+    for (Unit *u : CALCULATOR->units) {
+        if (u && u->isCurrency() && QString::fromStdString(u->abbreviation(true, false)) == target) {
+            CALCULATOR->setLocalCurrency(u);
+            return;
+        }
     }
 }
 
@@ -169,6 +217,11 @@ void CurrencyService::onFetchFinished(bool ok)
         // Reload the freshly-fetched rates into CALCULATOR under the shared lock.
         QMutexLocker<QRecursiveMutex> lock(m_engine->calcMutex());
         CALCULATOR->loadExchangeRates();
+    }
+    if (ok) {
+        // loadExchangeRates recreates the currency units and re-resolves the local
+        // currency from the locale, so re-apply any configured override.
+        applyLocalCurrency(QalkulatorConfig::self()->defaultCurrency());
     }
     // Update currencies + lastUpdated + available from the (now current) cache.
     syncFromCache();
