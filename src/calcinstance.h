@@ -23,7 +23,7 @@ class CalcInstance : public QObject
 
     Q_PROPERTY(ResultRegisterModel *history READ history CONSTANT)
     Q_PROPERTY(CalculatorEngine *engine READ engine CONSTANT)
-    Q_PROPERTY(QColor accentColor READ accentColor NOTIFY accentColorChanged)
+    Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged)
     Q_PROPERTY(bool hasAccent READ hasAccent NOTIFY accentColorChanged)
     Q_PROPERTY(int instanceId READ instanceId CONSTANT)
     Q_PROPERTY(bool primary READ primary CONSTANT)

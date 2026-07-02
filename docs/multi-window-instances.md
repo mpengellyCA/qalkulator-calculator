@@ -22,11 +22,13 @@ histories.
 - **Ephemeral:** a secondary window's history vanishes when it closes; only the
   main window's history persists across restarts (as today).
 
-**Out / deferred:**
-- **Magnetic window linking** (place side-by-side; move/resize as a group; detach
-  by title bar). Blocked on **Wayland** — clients cannot read or set their own
-  absolute window geometry, and there is no general KWin escape hatch. Revisit
-  later as an X11/Windows-only feature or an internal split-pane model.
+**KDE-exclusive (companion KWin script):**
+- **Magnetic window linking** (place side-by-side → snap + link; move the anchor
+  → the row travels; drag a follower off by its title bar; resize → shared
+  height). A Wayland *client* can't do this (no self-positioning), but the
+  *compositor* can, so it lives in a KWin script (`packaging/kwin/qalkulator-
+  magnetic/`) shipped on Linux and enabled per-user. No effect on Windows/macOS,
+  and a no-op if the script isn't enabled — the app never depends on it.
 
 ## Constraints
 - **Wayland** (default KDE session): no absolute window positioning/geometry for
@@ -65,7 +67,7 @@ histories.
    wrapping at the ends). The popover re-tints (header/border/highlight) to that
    window's accent. `↑/↓`/`Enter` insert into **your** field; `Ctrl+→` flows to
    **your** converter. Footer gains a `←/→ window` hint.
-3. **Magnetic linking** — deferred (see Scope).
+3. **Magnetic linking** — a companion KWin script (KDE-only; see below).
 
 ## Build phases (each an independently-testable `dev` commit)
 1. **Foundation** *(pure refactor, no UX change):* `CalcInstance` +
@@ -81,3 +83,38 @@ histories.
 - Secondary window placement: wherever the compositor puts it (can't position on
   Wayland).
 - Closing the main window quits the app; closing a secondary drops its thread.
+
+## KWin companion script — magnetic linking (KDE only)
+
+`packaging/kwin/qalkulator-magnetic/` (`metadata.json` + `contents/code/main.js`)
+is a KWin (Plasma 6) script. Because a Wayland client cannot move/resize its own
+top-levels but the compositor can, the linking lives here.
+
+Behaviour (horizontal only, this version):
+- Identifies our windows by `resourceClass`/`resourceName` containing
+  `qalkulator`, and tracks add/close.
+- **Snap + link:** when a drag finishes with a window's left/right edge within
+  `SNAP` px of another of our windows (and they overlap vertically), it snaps
+  flush, equalises height (**the shorter grows to the taller**), and records the
+  pair in a left→right group.
+- **Anchor moves the row:** dragging the **leftmost** window of a group
+  translates the whole row with it (via `frameGeometryChanged` during the
+  interactive move).
+- **Detach:** dragging any **non-leftmost** window removes it from the group at
+  move-start, so it pulls off freely (and may re-snap elsewhere on release).
+- **Resize as one:** finishing a resize on a grouped window gives the whole row
+  that height and re-flushes edges.
+
+Install & enable:
+- CMake installs it to `${KDE_INSTALL_DATADIR}/kwin/scripts/qalkulator-magnetic`
+  on Linux only (so every Linux bundler ships it; Windows/macOS skip it).
+- It is **opt-in**: enable in *System Settings → Window Management → KWin Scripts*
+  (or the planned in-app toggle: writes `kwinrc [Plugins]
+  qalkulator-magneticEnabled=true` and calls `org.kde.KWin reconfigure`).
+- Dev/live testing without a re-login: `org.kde.KWin /Scripting
+  org.kde.kwin.Scripting.loadScript <path> qalkulator-magnetic` then `start`;
+  logs go to the journal — `journalctl -b -f | grep qalkulator-magnetic:`.
+
+Verified so far: the script loads cleanly and detects our windows (all signal
+hooks connect). The drag/snap **feel** needs interactive testing on a real KDE
+session (it couldn't be exercised from the headless driver here).
