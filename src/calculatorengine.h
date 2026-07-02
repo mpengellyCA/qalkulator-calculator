@@ -69,6 +69,7 @@ public:
     // re-parseable number expressed in `fromUnit`.
     Q_INVOKABLE QVariantList compatibleAmounts(const QString &fromUnit) const;
     Q_INVOKABLE void copyToClipboard(const QString &text);
+    Q_INVOKABLE QString clipboardText() const;
 
     // Shared serialization lock for CurrencyService.
     QRecursiveMutex *calcMutex();

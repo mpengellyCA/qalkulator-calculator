@@ -56,8 +56,21 @@ Item {
     function currentOutput() {
         return root.convResult;
     }
+    // The raw amount the user entered (the "value" side of the conversion).
+    function currentAmount() {
+        return amountField.text;
+    }
     function focusAmount() {
         amountField.forceActiveFocus();
+    }
+
+    // Apply a saved favourite: set both selections to the stored pair. Order
+    // matters — _persistFrom may heal an incompatible To, and the following
+    // _persistTo then lands the intended destination.
+    function applyPair(from, to) {
+        root._persistFrom(from);
+        root._persistTo(to);
+        root.focusAmount();
     }
 
     // Open the recent-results dropdown, filtered to amounts usable here (raw

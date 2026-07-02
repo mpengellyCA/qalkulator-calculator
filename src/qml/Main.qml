@@ -23,6 +23,7 @@ Kirigami.ApplicationWindow {
     // Never shrink past the point where the current tab + keypad fit (so the
     // keypad can't overlap the converter). All content-based, so no scrollbar.
     minimumHeight: modeBar.implicitHeight
+                 + toolsBar.implicitHeight
                  + centerStack.Layout.minimumHeight
                  + (keypad.visible ? keypad.implicitHeight : 0)
                  + statusBar.implicitHeight
@@ -204,6 +205,33 @@ Kirigami.ApplicationWindow {
                 currentIndex: appWindow.mode
                 altHeld: appWindow.altHeld
                 onModeSelected: function (index) { appWindow.mode = index; }
+            }
+
+            // --- Tools strip: settings + per-mode context actions ---------
+            ToolsBar {
+                id: toolsBar
+                Layout.fillWidth: true
+                mode: appWindow.mode
+                // Bind to the active converter's current pair (reactive to mode).
+                curFrom: appWindow.mode === 2 ? currencyView.fromSel : unitsView.fromSel
+                curTo:   appWindow.mode === 2 ? currencyView.toSel   : unitsView.toSel
+
+                onSettingsRequested: settingsDialog.open()
+
+                // Calculator actions.
+                onClearHistoryRequested: Register.clear()
+                onPasteValueRequested: {
+                    expressionField.forceFocus();
+                    expressionField.insertValue(Engine.clipboardText());
+                }
+                onPasteExpressionRequested: expressionField.loadExpression(Engine.clipboardText())
+                onCopyExpressionRequested: Engine.copyToClipboard(expressionField.text)
+
+                // Converter actions (act on the active converter).
+                onPasteAmountRequested: appWindow.activeConverter().loadAmount(Engine.clipboardText())
+                onCopyResultRequested: Engine.copyToClipboard(appWindow.activeConverter().currentOutput())
+                onCopyValueRequested: Engine.copyToClipboard(appWindow.activeConverter().currentAmount())
+                onApplyFavorite: function (from, to) { appWindow.activeConverter().applyPair(from, to); }
             }
 
             // --- Center: Calculator stack OR ConverterView ----------------

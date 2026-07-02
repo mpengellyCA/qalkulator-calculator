@@ -52,5 +52,11 @@
     <entry name="history" type="StringList">
       <label>Serialized recent results (expression\x1fvalue\x1fcontext per entry).</label>
     </entry>
+    <entry name="favoriteCurrencyPairs" type="StringList">
+      <label>Favourite currency conversions, one "FROM|TO" per entry.</label>
+    </entry>
+    <entry name="favoriteUnitPairs" type="StringList">
+      <label>Favourite unit conversions, one "FROM|TO" per entry.</label>
+    </entry>
   </group>
 </kcfg>

@@ -21,6 +21,7 @@ kconfig_add_kcfg_files(qalkulator GENERATE_MOC qalkulatorconfig.kcfgc)
 set(QALKULATOR_QML_FILES
     qml/Main.qml
     qml/ModeBar.qml
+    qml/ToolsBar.qml
     qml/ExpressionField.qml
     qml/ResultPreview.qml
     qml/ResultRegisterView.qml

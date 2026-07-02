@@ -439,6 +439,14 @@ void CalculatorEngine::copyToClipboard(const QString &text)
     }
 }
 
+QString CalculatorEngine::clipboardText() const
+{
+    if (QClipboard *cb = QGuiApplication::clipboard()) {
+        return cb->text();
+    }
+    return QString();
+}
+
 QStringList CalculatorEngine::currencyCodes() const
 {
     QStringList codes;
