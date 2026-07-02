@@ -1,6 +1,7 @@
 # Multi-window: linked temporary calculator instances — design
 
-Status: **in progress** (branch `dev`). Author-driven design; implemented in phases.
+Status: **implemented** on branch `dev` (all three in-scope phases landed &
+verified; magnetic linking deferred). Author-driven design; built in phases.
 
 ## Goal
 Let the user open multiple *temporary* calculator windows, each an independent
