@@ -33,6 +33,10 @@ public:
 
     // Create a secondary instance (accent-coloured). Window creation lives in QML.
     Q_INVOKABLE CalcInstance *createInstance();
+    // Create an MCP agent instance: like a secondary (accent-coloured) but flagged
+    // read-only and stamped with the controlling agent's name. Window creation is
+    // driven from C++ (McpServer -> QML) rather than a user action.
+    CalcInstance *createAgentInstance(const QString &agentName);
     // Drop a secondary instance (no-op for the primary).
     Q_INVOKABLE void removeInstance(CalcInstance *inst);
 

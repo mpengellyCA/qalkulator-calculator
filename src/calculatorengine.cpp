@@ -119,6 +119,54 @@ QString drainMessages(bool *hadError)
     }
     return msgs.join(QStringLiteral("; "));
 }
+
+// Shared commit core: evaluate `expr` to a formatted result under the shared
+// lock and update the session-wide `ans` variable. Returns success; fills
+// *value (formatted result) and *message (drained calculator messages — the
+// error text on failure, otherwise any warnings). Used by both the interactive
+// commit and the MCP agent evaluation so they format identically.
+bool computeExpression(QRecursiveMutex *mutex, const QString &expr, int timeoutMs, bool singleUnit, QString *value, QString *message)
+{
+    std::string out;
+    bool ok = false;
+    bool hadError = false;
+    QString msg;
+    {
+        QMutexLocker<QRecursiveMutex> lock(mutex);
+        CALCULATOR->clearMessages();
+        EvaluationOptions eo = makeEvalOptions();
+        if (singleUnit) {
+            // Agent-friendly: a converted quantity as one unit ("3.106 mi"), not
+            // libqalculate's default mixed units ("3 mi + 188 yd + 0.2 ft").
+            eo.mixed_units_conversion = MIXED_UNITS_CONVERSION_NONE;
+        }
+        const PrintOptions po = makePrintOptions();
+
+        MathStructure mstruct;
+        ok = CALCULATOR->calculate(&mstruct, normalizeExpression(expr).toStdString(), timeoutMs, eo);
+        msg = drainMessages(&hadError);
+        if (ok && !CALCULATOR->aborted() && !hadError) {
+            mstruct.format(po);
+            out = mstruct.print(po);
+            // Update the `ans` continuation variable with the raw result.
+            Variable *existing = CALCULATOR->getVariable("ans");
+            if (existing && existing->isKnown()) {
+                static_cast<KnownVariable *>(existing)->set(mstruct);
+            } else {
+                CALCULATOR->addVariable(new KnownVariable(std::string(), "ans", mstruct, "Last Answer", false));
+            }
+        } else {
+            ok = false;
+        }
+    }
+    if (value) {
+        *value = QString::fromStdString(out);
+    }
+    if (message) {
+        *message = msg;
+    }
+    return ok;
+}
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -185,45 +233,32 @@ public Q_SLOTS:
         Q_EMIT conversionReady(seq, channel, QString::fromStdString(result), QString::fromStdString(info), error);
     }
 
-    // Commit: evaluate to a MathStructure, format+print, and return both the
-    // formatted value and the raw parse string used to set `ans`.
+    // Commit: evaluate, format+print, update `ans`, and hand back the value.
     void evaluateCommit(quint64 seq, const QString &expr)
     {
-        std::string value;
-        bool ok = false;
-        {
-            QMutexLocker<QRecursiveMutex> lock(m_mutex);
-            CALCULATOR->clearMessages();
-            const EvaluationOptions eo = makeEvalOptions();
-            const PrintOptions po = makePrintOptions();
+        QString value;
+        const bool ok = computeExpression(m_mutex, expr, kCommitTimeoutMs, /*singleUnit=*/false, &value, nullptr);
+        Q_EMIT commitReady(seq, expr, value, ok);
+    }
 
-            MathStructure mstruct;
-            ok = CALCULATOR->calculate(&mstruct, normalizeExpression(expr).toStdString(), kCommitTimeoutMs, eo);
-            bool hadError = false;
-            drainMessages(&hadError);
-            if (ok && !CALCULATOR->aborted() && !hadError) {
-                mstruct.format(po);
-                value = mstruct.print(po);
-                // Update the `ans` continuation variable with the raw result.
-                Variable *existing = CALCULATOR->getVariable("ans");
-                if (existing && existing->isKnown()) {
-                    static_cast<KnownVariable *>(existing)->set(mstruct);
-                } else {
-                    // is_local=false: a volatile session variable that must never be
-                    // written to the user's local definitions or collide with theirs.
-                    CALCULATOR->addVariable(new KnownVariable(std::string(), "ans", mstruct, "Last Answer", false));
-                }
-            } else {
-                ok = false;
-            }
-        }
-        Q_EMIT commitReady(seq, expr, QString::fromStdString(value), ok);
+    // MCP agent evaluation: same compute path as commit (so results format and
+    // land in the tape identically, with proper error detection and `ans`
+    // continuity), tagged with a caller-chosen id so the server can correlate the
+    // async reply and carrying the message text for a real error string. Uses the
+    // "to"/"->" conversion operators; the convert tool builds those explicitly.
+    void evaluateAgent(quint64 id, const QString &expr)
+    {
+        QString value;
+        QString message;
+        const bool ok = computeExpression(m_mutex, expr, kCommitTimeoutMs, /*singleUnit=*/true, &value, &message);
+        Q_EMIT agentReady(id, expr, value, ok, message);
     }
 
 Q_SIGNALS:
     void previewReady(quint64 seq, QString value, bool error, QString message);
     void conversionReady(quint64 seq, int channel, QString result, QString info, bool error);
     void commitReady(quint64 seq, QString expr, QString value, bool ok);
+    void agentReady(quint64 id, QString expr, QString value, bool ok, QString message);
 
 private:
     QRecursiveMutex *m_mutex;
@@ -282,6 +317,18 @@ CalculatorEngine::CalculatorEngine(ResultRegisterModel *registerModel, QObject *
         } else {
             Q_EMIT committed(false, QString());
         }
+    });
+
+    // Agent (MCP) result handling: on success append to this instance's tape —
+    // exactly like a commit, so the user watches the agent's math appear — then
+    // report back to the server tagged with the correlation id.
+    connect(m_worker, &CalcWorker::agentReady, this, [this](quint64 id, const QString &expr, const QString &value, bool ok, const QString &message) {
+        if (ok) {
+            m_registerModel->append(expr, value, QString());
+            m_ans = value;
+            Q_EMIT ansChanged();
+        }
+        Q_EMIT agentEvaluated(id, expr, value, ok, message);
     });
 
     m_thread->start();
@@ -381,6 +428,13 @@ void CalculatorEngine::commit(const QString &expr)
     // clear cannot cancel it.
     ++m_commitsInFlight;
     QMetaObject::invokeMethod(m_worker, "evaluateCommit", Qt::QueuedConnection, Q_ARG(quint64, ++m_commitSeq), Q_ARG(QString, e));
+}
+
+void CalculatorEngine::evaluateForAgent(quint64 id, const QString &expr)
+{
+    // Serializes on the worker after any pending preview/commit; its own id
+    // stream means it is never confused with the preview/commit sequences.
+    QMetaObject::invokeMethod(m_worker, "evaluateAgent", Qt::QueuedConnection, Q_ARG(quint64, id), Q_ARG(QString, expr));
 }
 
 void CalculatorEngine::updateConversion(const QString &amount, const QString &fromUnit, const QString &toUnit, bool isCurrency, int channel)

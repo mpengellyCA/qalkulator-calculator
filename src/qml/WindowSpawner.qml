@@ -43,4 +43,15 @@ QtObject {
             _windows.splice(i, 1);
         }
     }
+
+    // Close the window bound to a given instance (used when an MCP session ends
+    // server-side). The window's onClosing does the rest of the teardown.
+    function closeFor(instance) {
+        for (var i = 0; i < _windows.length; ++i) {
+            if (_windows[i] && _windows[i].inst === instance) {
+                _windows[i].close();
+                return;
+            }
+        }
+    }
 }

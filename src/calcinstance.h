@@ -27,6 +27,10 @@ class CalcInstance : public QObject
     Q_PROPERTY(bool hasAccent READ hasAccent NOTIFY accentColorChanged)
     Q_PROPERTY(int instanceId READ instanceId CONSTANT)
     Q_PROPERTY(bool primary READ primary CONSTANT)
+    // Agent windows are driven entirely over the MCP interface and are read-only
+    // to the user (they watch the agent's calculations land in the tape).
+    Q_PROPERTY(bool agent READ agent CONSTANT)
+    Q_PROPERTY(QString agentName READ agentName CONSTANT)
 
 public:
     explicit CalcInstance(int id, bool primary, QObject *parent = nullptr);
@@ -41,6 +45,11 @@ public:
     int instanceId() const { return m_id; }
     bool primary() const { return m_primary; }
 
+    bool agent() const { return m_agent; }
+    QString agentName() const { return m_agentName; }
+    // Mark this instance as MCP-controlled. Set once, before the window opens.
+    void setAgent(const QString &name);
+
 Q_SIGNALS:
     void accentColorChanged();
 
@@ -50,4 +59,6 @@ private:
     QColor m_accent; // invalid => use the OS accent (primary window)
     int m_id;
     bool m_primary;
+    bool m_agent = false;
+    QString m_agentName;
 };

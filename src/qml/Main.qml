@@ -12,4 +12,12 @@ import io.github.mpengellyca.qalkulator
 QtObject {
     id: boot
     Component.onCompleted: WindowSpawner.open(WindowManager.instanceAt(0))
+
+    // MCP: the server (C++) asks us to open/close an agent's read-only window
+    // whenever an agent connects or its session ends.
+    property Connections mcpConnections: Connections {
+        target: Mcp
+        function onOpenAgentWindowRequested(inst) { WindowSpawner.open(inst); }
+        function onCloseAgentWindowRequested(inst) { WindowSpawner.closeFor(inst); }
+    }
 }

@@ -50,6 +50,9 @@ engine, so the math is correct and the app stays fast and small.
 - **Linked windows** — open extra temporary calculator windows (`Ctrl+N`), each a
   separate thread of results with its own vivid accent colour; browse and pull in
   any window's results from the `Ctrl+↓` dropdown with `←/→`.
+- **AI agents (MCP)** — opt in to a local, token-guarded [Model Context Protocol](docs/mcp.md)
+  server so an AI agent can use the Qalculate! engine. Each agent opens its own
+  read-only window that streams its working live, so you see every calculation.
 - **Native theming** — follows your Breeze light/dark colour scheme automatically.
 
 ## A closer look

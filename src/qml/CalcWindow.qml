@@ -19,7 +19,13 @@ Kirigami.ApplicationWindow {
 
     property var inst
 
-    title: i18nc("@title:window", "QalKulator")
+    // An agent window is driven entirely over MCP: read-only to the user, who
+    // watches the agent's calculations land in the tape.
+    readonly property bool _agent: inst && inst.agent
+
+    title: _agent && inst.agentName.length > 0
+           ? i18nc("@title:window agent-controlled window", "%1 · QalKulator", inst.agentName)
+           : i18nc("@title:window", "QalKulator")
 
     // Secondary windows override the OS accent with their assigned vivid colour so
     // each thread is instantly distinguishable; the primary follows the OS accent
@@ -28,8 +34,13 @@ Kirigami.ApplicationWindow {
     readonly property bool _accented: inst && !inst.primary
 
     // Closing a secondary window drops its ephemeral thread and frees the window;
-    // closing the primary quits the app (even if secondaries are still open).
+    // closing the primary quits the app (even if secondaries are still open). An
+    // agent window additionally ends its MCP session (a no-op if the server
+    // already tore it down).
     onClosing: {
+        if (inst && inst.agent) {
+            Mcp.endSession(inst);
+        }
         if (inst && !inst.primary) {
             WindowManager.removeInstance(inst);
             WindowSpawner.forget(appWindow);
@@ -274,10 +285,47 @@ Kirigami.ApplicationWindow {
             anchors.fill: parent
             spacing: 0
 
+            // --- Agent banner: shown only in an MCP-controlled window ------
+            Rectangle {
+                id: agentBanner
+                Layout.fillWidth: true
+                visible: appWindow._agent
+                color: Kirigami.Theme.highlightColor
+                implicitHeight: agentRow.implicitHeight + Kirigami.Units.largeSpacing
+
+                RowLayout {
+                    id: agentRow
+                    anchors.fill: parent
+                    anchors.leftMargin: Kirigami.Units.largeSpacing
+                    anchors.rightMargin: Kirigami.Units.largeSpacing
+                    spacing: Kirigami.Units.smallSpacing
+
+                    QQC2.Label {
+                        text: "🤖"
+                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
+                    }
+                    QQC2.Label {
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        color: Kirigami.Theme.highlightedTextColor
+                        text: appWindow.inst && appWindow.inst.agentName.length > 0
+                              ? i18nc("@info agent window banner", "%1 is controlling this window", appWindow.inst.agentName)
+                              : i18nc("@info agent window banner", "An AI agent is controlling this window")
+                    }
+                    QQC2.Label {
+                        text: i18nc("@info agent window banner", "read-only")
+                        opacity: 0.85
+                        color: Kirigami.Theme.highlightedTextColor
+                        font: Kirigami.Theme.smallFont
+                    }
+                }
+            }
+
             // --- ModeBar --------------------------------------------------
             ModeBar {
                 id: modeBar
                 Layout.fillWidth: true
+                visible: !appWindow._agent
                 currentIndex: appWindow.mode
                 onModeSelected: function (index) { appWindow.mode = index; }
             }
@@ -286,6 +334,7 @@ Kirigami.ApplicationWindow {
             ToolsBar {
                 id: toolsBar
                 Layout.fillWidth: true
+                visible: !appWindow._agent
                 mode: appWindow.mode
                 // Bind to the active converter's current pair (reactive to mode).
                 curFrom: appWindow.mode === 2 ? currencyView.fromSel : unitsView.fromSel
@@ -332,20 +381,24 @@ Kirigami.ApplicationWindow {
                         inst: appWindow.inst
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        onValueRecalled: function (v) { expressionField.insertValue(v); }
-                        onExpressionEdit: function (e) { expressionField.loadExpression(e); }
+                        // In an agent window the tape is a live read-only view of
+                        // the agent's work; ignore recall/edit/flow affordances.
+                        onValueRecalled: function (v) { if (!appWindow._agent) expressionField.insertValue(v); }
+                        onExpressionEdit: function (e) { if (!appWindow._agent) expressionField.loadExpression(e); }
                         onSendToConverter: function (row, v) {
-                            appWindow.sendResultToConverter(row, v);
+                            if (!appWindow._agent)
+                                appWindow.sendResultToConverter(row, v);
                         }
                     }
 
-                    Kirigami.Separator { Layout.fillWidth: true }
+                    Kirigami.Separator { Layout.fillWidth: true; visible: !appWindow._agent }
 
-                    // Expression + live preview.
+                    // Expression + live preview (hidden in a read-only agent window).
                     ColumnLayout {
                         Layout.fillWidth: true
                         Layout.margins: Kirigami.Units.largeSpacing
                         spacing: Kirigami.Units.smallSpacing
+                        visible: !appWindow._agent
 
                         ExpressionField {
                             id: expressionField
@@ -397,7 +450,7 @@ Kirigami.ApplicationWindow {
             Keypad {
                 id: keypad
                 Layout.fillWidth: true
-                visible: Config.keypadVisible
+                visible: Config.keypadVisible && !appWindow._agent
                 onKeyPressed: function (t) {
                     if (appWindow.mode === 0)
                         expressionField.insertValue(t);
@@ -423,9 +476,12 @@ Kirigami.ApplicationWindow {
             }
 
             // --- StatusBar (pinned) --------------------------------------
+            // Hidden in an agent window: its shortcut hints and keypad toggle
+            // don't apply to a read-only, MCP-driven view.
             StatusBar {
                 id: statusBar
                 Layout.fillWidth: true
+                visible: !appWindow._agent
                 hints: appWindow.currentHints()
             }
         }

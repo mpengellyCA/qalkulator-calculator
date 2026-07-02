@@ -14,6 +14,8 @@ target_sources(qalkulator PRIVATE
     windowmanager.h
     kwinscript.cpp
     kwinscript.h
+    mcpserver.cpp
+    mcpserver.h
 )
 
 # Windows: embed the app icon (Explorer/taskbar/title-bar icon).
@@ -82,3 +84,12 @@ endif()
 ecm_finalize_qml_module(qalkulator)
 
 install(TARGETS qalkulator ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+
+# --- qalkulator-mcp: stdio<->HTTP MCP bridge -------------------------------
+# A tiny standalone relay for MCP clients that only speak stdio. It talks to the
+# running app's loopback MCP server, so it only needs Core + Network (no KF6, no
+# QML). Installed alongside the app; McpServer::bridgeCommand() points clients at
+# it.
+add_executable(qalkulator-mcp mcpbridge.cpp)
+target_link_libraries(qalkulator-mcp PRIVATE Qt6::Core Qt6::Network)
+install(TARGETS qalkulator-mcp ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

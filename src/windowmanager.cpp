@@ -58,6 +58,16 @@ CalcInstance *WindowManager::createInstance()
     return inst;
 }
 
+CalcInstance *WindowManager::createAgentInstance(const QString &agentName)
+{
+    auto *inst = new CalcInstance(m_nextId++, /*primary=*/false, this);
+    inst->setAccentColor(accentForIndex(static_cast<int>(m_instances.size())));
+    inst->setAgent(agentName);
+    m_instances.append(inst);
+    Q_EMIT instancesChanged();
+    return inst;
+}
+
 void WindowManager::removeInstance(CalcInstance *inst)
 {
     if (!inst || inst->primary()) {

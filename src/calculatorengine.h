@@ -62,6 +62,12 @@ public:
     // conversionUpdated() signal. There is no shared conversion state.
     Q_INVOKABLE void updateConversion(const QString &amount, const QString &fromUnit, const QString &toUnit, bool isCurrency, int channel);
     Q_INVOKABLE QString ansToken() const;
+
+    // MCP agent evaluation: evaluate `expr` asynchronously (same worker + format
+    // path as a user commit, so the result lands in this instance's tape), then
+    // report back via agentEvaluated() tagged with `id`. Called from C++ only
+    // (McpServer), never QML. `id` correlates the async reply to the request.
+    void evaluateForAgent(quint64 id, const QString &expr);
     Q_INVOKABLE QStringList currencyCodes() const;
     // For the converter's history dropdown: the register entries usable as an
     // amount FROM `fromUnit` — a raw (dimensionless) number, or a quantity whose
@@ -92,6 +98,10 @@ Q_SIGNALS:
     void calculatingChanged();
     void ansChanged();
     void committed(bool ok, QString value);
+    // Result of an evaluateForAgent() call. `id` is the caller's correlation tag;
+    // `value` is the formatted result (empty on failure), `message` the error or
+    // warning text. The result has already been appended to the tape when ok.
+    void agentEvaluated(quint64 id, QString expr, QString value, bool ok, QString message);
     // Per-channel conversion result. `rate` is the raw "1 from -> to" value; the
     // view composes the full "1 <from> = <rate>" line. Only the view whose
     // channel matches consumes it.

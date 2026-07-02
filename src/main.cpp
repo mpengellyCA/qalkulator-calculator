@@ -38,6 +38,7 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringW(const wchar_t
 #include "calculatorengine.h"
 #include "currencyservice.h"
 #include "kwinscript.h"
+#include "mcpserver.h"
 #include "qalkulatorconfig.h"
 #include "resultregistermodel.h"
 #include "windowmanager.h"
@@ -179,6 +180,10 @@ int main(int argc, char *argv[])
     // App-side control for the companion magnetic-linking KWin script (KDE only).
     auto *kwinScript = new KWinScript(&app);
 
+    // MCP server: lets an AI agent drive the engine via read-only agent windows.
+    // Off unless the user enabled it (the ctor auto-starts when so configured).
+    auto *mcp = new McpServer(windows, &app);
+
     // --- QML ---
     QQmlApplicationEngine qmlEngine;
     KLocalization::setupLocalizedContext(&qmlEngine);
@@ -186,12 +191,13 @@ int main(int argc, char *argv[])
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "WindowManager", windows);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Currency", currency);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Magnet", kwinScript);
+    qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Mcp", mcp);
     qmlRegisterSingletonInstance("io.github.mpengellyca.qalkulator", 1, 0, "Config", QalkulatorConfig::self());
 
     // App-owned singletons; make ownership explicit so QML never GCs them. Each
     // per-window CalcInstance is parented to the WindowManager, so the instances
     // QML reaches via WindowManager.instanceAt() are safe too.
-    for (QObject *o : {static_cast<QObject *>(windows), static_cast<QObject *>(currency), static_cast<QObject *>(kwinScript), static_cast<QObject *>(QalkulatorConfig::self())}) {
+    for (QObject *o : {static_cast<QObject *>(windows), static_cast<QObject *>(currency), static_cast<QObject *>(kwinScript), static_cast<QObject *>(mcp), static_cast<QObject *>(QalkulatorConfig::self())}) {
         QQmlEngine::setObjectOwnership(o, QQmlEngine::CppOwnership);
     }
 

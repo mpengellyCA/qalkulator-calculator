@@ -25,3 +25,9 @@ void CalcInstance::setAccentColor(const QColor &c)
     m_accent = c;
     Q_EMIT accentColorChanged();
 }
+
+void CalcInstance::setAgent(const QString &name)
+{
+    m_agent = true;
+    m_agentName = name;
+}
