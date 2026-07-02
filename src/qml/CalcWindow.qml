@@ -24,7 +24,8 @@ Kirigami.ApplicationWindow {
     // Secondary windows override the OS accent with their assigned vivid colour so
     // each thread is instantly distinguishable; the primary follows the OS accent
     // (inherit:true, which makes Kirigami ignore the placeholder highlightColor).
-    readonly property bool _accented: inst && inst.hasAccent
+    // Secondary windows override the OS accent; the primary keeps it.
+    readonly property bool _accented: inst && !inst.primary
 
     // Closing a secondary window drops its ephemeral thread and frees the window;
     // closing the primary quits the app (even if secondaries are still open).
@@ -84,7 +85,15 @@ Kirigami.ApplicationWindow {
         else
             Qt.callLater(activeConverter().focusAmount);
     }
-    Component.onCompleted: focusExpression()
+    Component.onCompleted: {
+        // Record the primary's OS accent on its instance so the cross-window
+        // results popover can tint the primary's history correctly even when
+        // browsed from a secondary window (this does NOT trigger the override
+        // binding above, which is gated on !primary).
+        if (inst && inst.primary)
+            inst.accentColor = page.Kirigami.Theme.highlightColor;
+        focusExpression();
+    }
 
     // --- Global shortcuts (§7) -------------------------------------------
     // Mode switching — Ctrl+1/2/3 (shown on the tab keycaps).
