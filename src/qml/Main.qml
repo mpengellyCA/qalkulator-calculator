@@ -6,7 +6,7 @@
 // ToolsBar, the Calculator stack (tape → expression + preview → keypad) and the
 // ConverterView (Units + Currency), the pinned StatusBar, the results popup and
 // the settings dialog. All global shortcuts and the flow wiring (§5.2, §7) live
-// here. (Alt+C/U/R still jump to a mode; there is no reveal overlay.)
+// here. (Modes switch with Ctrl+1/2/3 only — no Alt shortcuts.)
 
 import QtQuick
 import QtQuick.Layouts
@@ -68,14 +68,10 @@ Kirigami.ApplicationWindow {
     Component.onCompleted: focusExpression()
 
     // --- Global shortcuts (§7) -------------------------------------------
+    // Mode switching — Ctrl+1/2/3 (shown on the tab keycaps).
     Shortcut { sequences: ["Ctrl+1"]; onActivated: appWindow.mode = 0 }
     Shortcut { sequences: ["Ctrl+2"]; onActivated: appWindow.mode = 1 }
     Shortcut { sequences: ["Ctrl+3"]; onActivated: appWindow.mode = 2 }
-
-    // Alt+letter mnemonics jump to a mode (§8 rule 3).
-    Shortcut { sequences: ["Alt+C"]; onActivated: appWindow.mode = 0 }
-    Shortcut { sequences: ["Alt+U"]; onActivated: appWindow.mode = 1 }
-    Shortcut { sequences: ["Alt+R"]; onActivated: appWindow.mode = 2 }
 
     // Copy current result from any field.
     Shortcut {

@@ -89,7 +89,6 @@ engine, so the math is correct and the app stays fast and small.
 | `Ctrl+U` | Browse & insert a unit |
 | `Ctrl+→` / `Ctrl+←` | Send a result to the converter / send it back |
 | `Ctrl+S` · `Ctrl+K` · `Ctrl+C` | Swap from/to · toggle keypad · copy result |
-| `Alt+C` / `Alt+U` / `Alt+R` | Jump to Calculator / Units / Currency |
 | `Ctrl+,` | Open settings |
 
 ## Build
