@@ -138,6 +138,23 @@ QtObject {
         return value;
     }
 
+    // Resolve a detected unit token (abbreviation or name, e.g. "mi"/"mile")
+    // to a catalogue `value`, or "" if it isn't in the curated catalogue. Matches
+    // exactly (case-insensitive) against each unit's value / label / aliases.
+    function resolve(token) {
+        var t = (token || "").toLowerCase().trim();
+        if (t.length === 0)
+            return "";
+        for (var i = 0; i < categories.length; ++i)
+            for (var j = 0; j < categories[i].units.length; ++j) {
+                var forms = _formsOf(categories[i].units[j]);
+                for (var k = 0; k < forms.length; ++k)
+                    if (forms[k] === t)
+                        return categories[i].units[j].value;
+            }
+        return "";
+    }
+
     // The category name a value belongs to, or "".
     function categoryOf(value) {
         for (var i = 0; i < categories.length; ++i)

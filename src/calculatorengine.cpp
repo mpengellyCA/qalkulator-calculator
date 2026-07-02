@@ -559,4 +559,103 @@ QVariantList CalculatorEngine::compatibleAmounts(const QString &fromUnit) const
     return out;
 }
 
+// Depth-first search for the first Unit referenced anywhere in a structure
+// (a quantity is typically number × unit; compound units nest deeper).
+static Unit *firstUnitIn(const MathStructure &m)
+{
+    if (m.isUnit()) {
+        return m.unit();
+    }
+    for (size_t i = 0; i < m.size(); ++i) {
+        if (Unit *u = firstUnitIn(m[i])) {
+            return u;
+        }
+    }
+    return nullptr;
+}
+
+QVariantMap CalculatorEngine::classifyAmount(const QString &value) const
+{
+    QVariantMap res;
+    res.insert(QStringLiteral("kind"), QStringLiteral("number"));
+    res.insert(QStringLiteral("unit"), QString());
+    res.insert(QStringLiteral("unitName"), QString());
+    res.insert(QStringLiteral("amount"), QString());
+
+    const QString v = value.trimmed();
+    if (v.isEmpty() || !CALCULATOR) {
+        return res;
+    }
+
+    QMutexLocker<QRecursiveMutex> lock(&m_calcMutex);
+
+    auto hadError = []() -> bool {
+        bool err = false;
+        while (CalculatorMessage *m = CALCULATOR->message()) {
+            if (m->type() == MESSAGE_ERROR) {
+                err = true;
+            }
+            CALCULATOR->nextMessage();
+        }
+        return err;
+    };
+
+    EvaluationOptions eo;
+    PrintOptions po;
+    po.use_unicode_signs = false;
+    po.number_fraction_format = FRACTION_DECIMAL;
+    static const QRegularExpression wsRe(QStringLiteral("\\s+"));
+
+    CALCULATOR->clearMessages();
+    MathStructure m;
+    CALCULATOR->calculate(&m, v.toStdString(), 400, eo);
+    if (CALCULATOR->aborted() || hadError()) {
+        return res; // unparseable → caller falls back to the raw value
+    }
+
+    if (!m.containsType(STRUCT_UNIT)) {
+        if (!m.representsNumber()) {
+            return res;
+        }
+        QString amount = v;
+        amount.remove(wsRe);
+        res[QStringLiteral("amount")] = amount;
+        return res; // kind stays "number"
+    }
+
+    Unit *u = firstUnitIn(m);
+    const bool isCurrency = u && u->isCurrency();
+
+    // Coefficient = value / (1 <abbreviation>), iff that cancels to a pure number
+    // (true for a simple quantity; a compound unit like m/s leaves a residual
+    // unit, so we fall back to an empty amount).
+    QString amount;
+    if (u) {
+        const std::string ab = u->abbreviation(true, false);
+        CALCULATOR->clearMessages();
+        MathStructure ratio;
+        const std::string testExpr = "(" + v.toStdString() + ")/(" + ab + ")";
+        CALCULATOR->calculate(&ratio, testExpr, 400, eo);
+        if (!CALCULATOR->aborted() && !hadError()
+            && !ratio.containsType(STRUCT_UNIT) && ratio.representsNumber()) {
+            ratio.format(po);
+            amount = QString::fromStdString(ratio.print(po));
+            amount.remove(wsRe);
+        }
+    }
+
+    if (isCurrency) {
+        res[QStringLiteral("kind")] = QStringLiteral("currency");
+        res[QStringLiteral("unit")] = u ? QString::fromStdString(u->abbreviation(true, false)) : QString();
+    } else {
+        res[QStringLiteral("kind")] = QStringLiteral("unit");
+        if (u) {
+            res[QStringLiteral("unit")] = QString::fromStdString(u->abbreviation(true, false));
+            res[QStringLiteral("unitName")] = QString::fromStdString(u->singular(true, false));
+        }
+    }
+    res[QStringLiteral("amount")] = amount;
+    return res;
+}
+
 #include "calculatorengine.moc"

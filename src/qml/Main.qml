@@ -103,8 +103,7 @@ Kirigami.ApplicationWindow {
     // Flow: Ctrl+Right / Ctrl+Left.
     Shortcut {
         sequences: ["Ctrl+Right"]
-        onActivated: appWindow.sendResultToConverter(
-            -1, Engine.livePreview.length > 0 ? Engine.livePreview : "")
+        onActivated: appWindow.flowRight()
     }
     Shortcut {
         sequences: ["Ctrl+Left"]
@@ -113,8 +112,32 @@ Kirigami.ApplicationWindow {
     }
 
     // --- Flow wiring (§5.2) ----------------------------------------------
-    // Ctrl+→ : send a result into the last-used converter and switch mode.
-    // row < 0 means "use the newest/last result".
+    // Ctrl+→ sends the current result into whichever converter fits its unit
+    // type: a currency amount → Currency, a physical quantity → Units (with the
+    // From unit pre-set), a raw number → Units. A SECOND Ctrl+→ within 1s (while
+    // in a converter) escalates the destination to Currency. `_flowAmount`/
+    // `_flowLastMs` remember the last sent value so the second press can reuse it.
+    property double _flowLastMs: 0
+    property string _flowAmount: ""
+
+    function flowRight() {
+        var now = Date.now();
+        // Second Ctrl+→ within 1s → move the same value over to Currency.
+        if (appWindow.isConverter && appWindow._flowAmount.length > 0
+            && (now - appWindow._flowLastMs) < 1000) {
+            appWindow._flowLastMs = now;
+            appWindow._routeToCurrency(appWindow._flowAmount, "");
+            return;
+        }
+        if (appWindow.mode !== 0)
+            return; // Ctrl+→ only initiates a flow from the Calculator.
+        appWindow.sendResultToConverter(
+            -1, Engine.livePreview.length > 0 ? Engine.livePreview : "");
+    }
+
+    // Route a result (livePreview, or a specific register row) into the converter
+    // that matches its unit type. Also used by the results dropdown and the tape
+    // row "send" affordance. row < 0 means "use the newest/last result".
     function sendResultToConverter(row, value) {
         if (appWindow.mode !== 0)
             return; // Only meaningful from the Calculator.
@@ -125,13 +148,47 @@ Kirigami.ApplicationWindow {
             var r = (row !== undefined && row >= 0) ? row : Register.count - 1;
             v = Register.valueAt(r);
         }
-        // Map lastConverterMode: 1 currency -> app mode 2; 0 units -> app mode 1.
-        appWindow.mode = (Config.lastConverterMode === 0) ? 1 : 2;
-        var conv = appWindow.activeConverter();
-        conv.inboundTag =
+
+        var cls = Engine.classifyAmount(v);
+        var amount = (cls.amount && cls.amount.length > 0) ? cls.amount : v;
+        appWindow._flowAmount = amount;
+        appWindow._flowLastMs = Date.now();
+
+        if (cls.kind === "currency") {
+            appWindow._routeToCurrency(amount, cls.unit);
+        } else if (cls.kind === "unit") {
+            appWindow._routeToUnits(amount, Units.resolve(cls.unit) || Units.resolve(cls.unitName));
+        } else {
+            appWindow._routeToUnits(amount, ""); // raw number → Units, keep From
+        }
+    }
+
+    function _routeToUnits(amount, fromValue) {
+        appWindow.mode = 1;
+        unitsView.inboundTag =
             i18nc("@info inbound source tag", "brought from Calculator · via ⌃→");
         Qt.callLater(function () {
-            conv.loadAmount(v);
+            if (fromValue && fromValue.length > 0) {
+                unitsView._persistFrom(fromValue); // heals the To unit too
+                // Avoid a degenerate From === To (e.g. sending miles when the
+                // converter's To was already miles): pick a different To.
+                if (unitsView.toSel === fromValue) {
+                    var alt = Units.firstCompatible(Units.categoryOf(fromValue), fromValue);
+                    if (alt && alt !== fromValue)
+                        unitsView._persistTo(alt);
+                }
+            }
+            unitsView.loadAmount(amount);
+        });
+    }
+    function _routeToCurrency(amount, fromCode) {
+        appWindow.mode = 2;
+        currencyView.inboundTag =
+            i18nc("@info inbound source tag", "brought from Calculator · via ⌃→");
+        Qt.callLater(function () {
+            if (fromCode && fromCode.length > 0)
+                currencyView._persistFrom(fromCode);
+            currencyView.loadAmount(amount);
         });
     }
 
@@ -257,9 +314,9 @@ Kirigami.ApplicationWindow {
                             }
                             onCopyRequested: Engine.copyToClipboard(
                                 Engine.livePreview.length > 0 ? Engine.livePreview : Engine.ans)
-                            // Flow the live result if one is showing, else the last committed one.
-                            onFlowRequested: appWindow.sendResultToConverter(
-                                -1, Engine.livePreview.length > 0 ? Engine.livePreview : "")
+                            // Flow the live result (else the last committed one) to
+                            // the converter that fits its unit type.
+                            onFlowRequested: appWindow.flowRight()
                         }
                         ResultPreview {
                             id: resultPreview
@@ -275,6 +332,7 @@ Kirigami.ApplicationWindow {
                     isCurrency: false
                     onToCalcRequested: appWindow.sendConvertedToCalculator()
                     onCopyRequested: Engine.copyToClipboard(unitsView.currentOutput())
+                    onFlowRequested: appWindow.flowRight() // 2nd Ctrl+→ → Currency
                 }
 
                 // (2) Currency converter — its own independent state.
@@ -283,6 +341,7 @@ Kirigami.ApplicationWindow {
                     isCurrency: true
                     onToCalcRequested: appWindow.sendConvertedToCalculator()
                     onCopyRequested: Engine.copyToClipboard(currencyView.currentOutput())
+                    onFlowRequested: appWindow.flowRight()
                 }
             }
 

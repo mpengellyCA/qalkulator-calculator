@@ -33,6 +33,10 @@ Item {
     signal toCalcRequested()
     // Ctrl+C with no selection — copy the converted output.
     signal copyRequested()
+    // Ctrl+→ — a second flow press while in a converter; Main escalates the
+    // destination to Currency (the amount field would otherwise eat Ctrl+Right
+    // as a word-jump, so it's intercepted like Ctrl+← below).
+    signal flowRequested()
 
     // Distinct channel per instance so each consumes only its own conversion
     // result from the Engine (no shared output state between Units and Currency).
@@ -304,6 +308,9 @@ Item {
                         event.accepted = true;
                     } else if (event.key === Qt.Key_Left && (event.modifiers & Qt.ControlModifier)) {
                         root.toCalcRequested();
+                        event.accepted = true;
+                    } else if (event.key === Qt.Key_Right && (event.modifiers & Qt.ControlModifier)) {
+                        root.flowRequested();
                         event.accepted = true;
                     } else if (event.key === Qt.Key_C && (event.modifiers & Qt.ControlModifier)) {
                         if (amountField.selectedText.length === 0) {

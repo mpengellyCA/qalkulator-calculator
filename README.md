@@ -87,7 +87,7 @@ engine, so the math is correct and the app stays fast and small.
 | `Up` / `Down` | Recall history · `Ctrl+Down` opens the results dropdown |
 | `Tab` | Accept the highlighted unit suggestion |
 | `Ctrl+U` | Browse & insert a unit |
-| `Ctrl+→` / `Ctrl+←` | Send a result to the converter / send it back |
+| `Ctrl+→` / `Ctrl+←` | Send a result to the fitting converter — units→Units, currency→Currency, a plain number→Units (press `Ctrl+→` again for Currency) — or send the converted value back |
 | `Ctrl+S` · `Ctrl+K` · `Ctrl+C` | Swap from/to · toggle keypad · copy result |
 | `Ctrl+,` | Open settings |
 

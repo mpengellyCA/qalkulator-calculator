@@ -27,6 +27,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVariantList>
+#include <QVariantMap>
 
 class ResultRegisterModel;
 class QThread;
@@ -68,6 +69,11 @@ public:
     // Each map is {expression, value, amount} where `amount` is a clean,
     // re-parseable number expressed in `fromUnit`.
     Q_INVOKABLE QVariantList compatibleAmounts(const QString &fromUnit) const;
+    // Classify a result value for the Ctrl+→ flow so it lands in the right
+    // converter. Returns {kind: "currency"|"unit"|"number", unit: <currency code
+    // or unit abbreviation>, unitName: <singular unit name>, amount: <clean,
+    // re-parseable coefficient>}. `amount` may be empty for compound units.
+    Q_INVOKABLE QVariantMap classifyAmount(const QString &value) const;
     Q_INVOKABLE void copyToClipboard(const QString &text);
     Q_INVOKABLE QString clipboardText() const;
 
